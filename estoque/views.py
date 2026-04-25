@@ -400,7 +400,7 @@ def item_detalhe(request, pk):
 def item_criar(request):
     """Cria um novo item no estoque."""
     if request.method == 'POST':
-        form = ItemForm(request.POST)
+        form = ItemForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, 'Item cadastrado com sucesso!')
@@ -416,7 +416,7 @@ def item_editar(request, pk):
     """Edita os dados cadastrais de um item (não altera quantidade via aqui)."""
     item = get_object_or_404(Item, pk=pk)
     if request.method == 'POST':
-        form = ItemForm(request.POST, instance=item)
+        form = ItemForm(request.POST, request.FILES, instance=item)
         if form.is_valid():
             form.save()
             messages.success(request, 'Item atualizado com sucesso!')

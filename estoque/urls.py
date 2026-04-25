@@ -61,4 +61,4 @@ urlpatterns = [
 
     # ── Relatórios ────────────────────────────────────────────────────────────
     path('relatorios/', views.relatorio_estoque, name='relatorio_estoque'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
