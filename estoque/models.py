@@ -250,6 +250,50 @@ class Item(models.Model):
         auto_now_add=True,
         verbose_name='Data de cadastro'
     )
+        # Rastreabilidade e controle de qualidade
+    lote = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Lote',
+        help_text='Número do lote de fabricação'
+    )
+    data_fabricacao = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Data de fabricação'
+    )
+    data_validade = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Data de validade',
+        help_text='Para reagentes e materiais perecíveis'
+    )
+
+    # Controle patrimonial
+    codigo_patrimonio = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Código de patrimônio',
+        help_text='Número de tombamento patrimonial'
+    )
+    valor = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor unitário (R$)',
+        help_text='Valor de aquisição por unidade'
+    )
+
+    # Documentação
+    anexo = models.FileField(
+        upload_to='itens/anexos/%Y/%m/',
+        null=True,
+        blank=True,
+        verbose_name='Anexo',
+        help_text='Nota fiscal, manual, FISPQ, foto do item (PDF ou imagem)'
+    )
+
     ultima_atualizacao = models.DateTimeField(
         auto_now=True,
         verbose_name='Última atualização'
@@ -267,6 +311,24 @@ class Item(models.Model):
     def estoque_baixo(self):
         """Retorna True se a quantidade atual estiver abaixo do mínimo."""
         return self.quantidade_atual < self.quantidade_minima
+
+    @property
+    def validade_vencida(self):
+        """Retorna True se a data de validade já passou."""
+        if self.data_validade:
+            from django.utils import timezone
+            return self.data_validade < timezone.now().date()
+        return False
+
+    @property
+    def validade_proxima_vencer(self):
+        """Retorna True se a validade está a menos de 30 dias."""
+        if self.data_validade:
+            from django.utils import timezone
+            import datetime
+            limite = timezone.now().date() + datetime.timedelta(days=30)
+            return self.data_validade <= limite and not self.validade_vencida
+        return False
 
     @property
     def get_unidade_display_curto(self):
@@ -356,11 +418,23 @@ class Movimentacao(models.Model):
         related_name='movimentacoes',
         verbose_name='Responsável pelo registro'
     )
-    destino_origem = models.CharField(
+    # destino_origem = models.CharField(
+    #     max_length=200,
+    #     blank=True,
+    #     verbose_name='Destino / Origem',
+    #     help_text='Para quem saiu o material ou de onde veio'
+    # )
+    solicitante_nome = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Destino / Origem',
-        help_text='Para quem saiu o material ou de onde veio'
+        verbose_name='Nome do solicitante',
+        help_text='Para quem foi destinado (em caso de saída)'
+    )
+    solicitante_departamento = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Departamento',
+        help_text='Ex: Geologia, Análise Geoambiental, Geografia'
     )
     almoxarifado_destino = models.ForeignKey(
         Almoxarifado,
@@ -395,10 +469,11 @@ class Movimentacao(models.Model):
         ordering = ['-data_movimentacao']
 
     def __str__(self):
+        destino = self.solicitante_nome or self.solicitante_departamento or '—'
         return (
             f'{self.get_tipo_display()} — {self.item.nome} '
             f'({self.quantidade} {self.item.unidade_medida}) '
-            f'em {self.data_movimentacao.strftime("%d/%m/%Y %H:%M")}'
+            f'para {destino} em {self.data_movimentacao.strftime("%d/%m/%Y %H:%M")}'
         )
 
     def clean(self):

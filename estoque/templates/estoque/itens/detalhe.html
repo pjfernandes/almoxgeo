@@ -44,6 +44,55 @@
           <dt class="col-sm-5 text-muted small">Localização física</dt>
           <dd class="col-sm-7">{{ item.localizacao_fisica|default:"—" }}</dd>
 
+          <!-- ═══ NOVOS CAMPOS ═══ -->
+
+          {% if item.lote %}
+          <dt class="col-sm-5 text-muted small">Lote</dt>
+          <dd class="col-sm-7 font-monospace small">{{ item.lote }}</dd>
+          {% endif %}
+
+          {% if item.data_fabricacao %}
+          <dt class="col-sm-5 text-muted small">Data de fabricação</dt>
+          <dd class="col-sm-7 small">{{ item.data_fabricacao|date:"d/m/Y" }}</dd>
+          {% endif %}
+
+          {% if item.data_validade %}
+          <dt class="col-sm-5 text-muted small">Data de validade</dt>
+          <dd class="col-sm-7">
+            <span class="small">{{ item.data_validade|date:"d/m/Y" }}</span>
+            {% if item.validade_vencida %}
+            <span class="badge bg-danger ms-2">Vencida</span>
+            {% elif item.validade_proxima_vencer %}
+            <span class="badge bg-warning text-dark ms-2">Vence em breve</span>
+            {% else %}
+            <span class="badge bg-success ms-2">OK</span>
+            {% endif %}
+          </dd>
+          {% endif %}
+
+          {% if item.codigo_patrimonio %}
+          <dt class="col-sm-5 text-muted small">Patrimônio</dt>
+          <dd class="col-sm-7 font-monospace small">{{ item.codigo_patrimonio }}</dd>
+          {% endif %}
+
+          {% if item.valor %}
+          <dt class="col-sm-5 text-muted small">Valor unitário</dt>
+          <dd class="col-sm-7 fw-semibold text-success">
+            R$ {{ item.valor|floatformat:2 }}
+          </dd>
+          {% endif %}
+
+          {% if item.anexo %}
+          <dt class="col-sm-5 text-muted small">Anexo</dt>
+          <dd class="col-sm-7">
+            <a href="{{ item.anexo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-paperclip me-1"></i>Ver anexo
+            </a>
+          </dd>
+          {% endif %}
+
+          <!-- ═══ FIM NOVOS CAMPOS ═══ -->
+
           <dt class="col-sm-5 text-muted small">Cadastrado em</dt>
           <dd class="col-sm-7 small">{{ item.data_cadastro|date:"d/m/Y H:i" }}</dd>
 
@@ -121,8 +170,8 @@
             <th class="text-end">Qtd.</th>
             <th class="text-end">Anterior</th>
             <th class="text-end">Posterior</th>
-            <th>Destino/Origem</th>
-            <th>Responsável</th>
+            <th class="text-end">Destino</th>
+            <th class="text-end">Responsável</th>
             <th>Obs.</th>
           </tr>
         </thead>
@@ -146,16 +195,21 @@
             <td class="text-end fw-bold">{{ mov.quantidade }}</td>
             <td class="text-end text-muted">{{ mov.quantidade_anterior }}</td>
             <td class="text-end fw-semibold">{{ mov.quantidade_posterior }}</td>
-            <td class="small">
-              {{ mov.destino_origem|default:"—" }}
-              {% if mov.almoxarifado_destino %}
-              <span class="text-info">→ {{ mov.almoxarifado_destino.nome }}</span>
+            <td class="text-end small">
+              {% if mov.solicitante_nome %}
+              {{ mov.solicitante_nome }}
+              {% if mov.solicitante_departamento %}
+              <br><small class="text-muted">{{ mov.solicitante_departamento }}</small>
               {% endif %}
-              {% if mov.fornecedor %}
+              {% elif mov.almoxarifado_destino %}
+              <span class="text-info">→ {{ mov.almoxarifado_destino.nome }}</span>
+              {% elif mov.fornecedor %}
               <span class="text-success">{{ mov.fornecedor.nome }}</span>
+              {% else %}
+              —
               {% endif %}
             </td>
-            <td class="small">{{ mov.responsavel.nome_completo|truncatechars:20 }}</td>
+            <td class="text-end small">{{ mov.responsavel.nome_completo|truncatechars:20 }}</td>
             <td class="small text-muted">{{ mov.observacao|truncatechars:30|default:"—" }}</td>
           </tr>
           {% empty %}

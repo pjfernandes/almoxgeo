@@ -120,11 +120,18 @@ class ItemForm(forms.ModelForm):
         fields = [
             'nome', 'descricao', 'categoria', 'almoxarifado',
             'unidade_medida', 'quantidade_atual', 'quantidade_minima',
-            'localizacao_fisica'
+            'localizacao_fisica',
+            # Novos campos
+            'lote', 'data_fabricacao', 'data_validade',
+            'codigo_patrimonio', 'valor', 'anexo'
         ]
         widgets = {
             'descricao': forms.Textarea(attrs={'rows': 3}),
             'localizacao_fisica': forms.TextInput(attrs={'placeholder': 'Ex: Prateleira B, Coluna 3'}),
+            'data_fabricacao': forms.DateInput(attrs={'type': 'date'}),
+            'data_validade': forms.DateInput(attrs={'type': 'date'}),
+            'codigo_patrimonio': forms.TextInput(attrs={'placeholder': 'Ex: 2024.001.123'}),
+            'lote': forms.TextInput(attrs={'placeholder': 'Ex: LOTE-2024-A123'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -132,6 +139,7 @@ class ItemForm(forms.ModelForm):
         self.fields['almoxarifado'].queryset = Almoxarifado.objects.filter(ativo=True)
         self.helper = FormHelper()
         self.helper.layout = Layout(
+            # Identificação básica
             Row(
                 Column('nome',          css_class='col-md-8'),
                 Column('unidade_medida',css_class='col-md-4'),
@@ -140,12 +148,36 @@ class ItemForm(forms.ModelForm):
                 Column('categoria',     css_class='col-md-6'),
                 Column('almoxarifado',  css_class='col-md-6'),
             ),
+            'descricao',
+
+            # Quantidades e localização
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3">Estoque e Localização</h6>'),
             Row(
                 Column('quantidade_atual',   css_class='col-md-4'),
                 Column('quantidade_minima',  css_class='col-md-4'),
                 Column('localizacao_fisica', css_class='col-md-4'),
             ),
-            'descricao',
+
+            # Rastreabilidade
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3">Rastreabilidade e Qualidade</h6>'),
+            Row(
+                Column('lote',            css_class='col-md-4'),
+                Column('data_fabricacao', css_class='col-md-4'),
+                Column('data_validade',   css_class='col-md-4'),
+            ),
+
+            # Patrimônio e valor
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3">Controle Patrimonial</h6>'),
+            Row(
+                Column('codigo_patrimonio', css_class='col-md-6'),
+                Column('valor',             css_class='col-md-6'),
+            ),
+
+            # Anexo
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3">Documentação</h6>'),
+            'anexo',
+            HTML('<small class="text-muted">Aceita PDF, imagens (JPG, PNG), documentos. Máx 10MB.</small>'),
+
             Div(
                 Submit('submit', 'Salvar', css_class='btn btn-primary'),
                 HTML('<a href="{% url \'estoque:item_lista\' %}" class="btn btn-secondary ms-2">Cancelar</a>'),
@@ -153,21 +185,28 @@ class ItemForm(forms.ModelForm):
             )
         )
 
-
 class MovimentacaoForm(forms.ModelForm):
     class Meta:
         model  = Movimentacao
         fields = [
             'item', 'tipo', 'quantidade',
-            'destino_origem', 'almoxarifado_destino',
-            'fornecedor', 'observacao'
+            'solicitante_nome', 'solicitante_departamento',  # novos campos
+            'almoxarifado_destino', 'fornecedor', 'observacao'
         ]
         widgets = {
             'observacao': forms.Textarea(attrs={'rows': 2}),
+            'solicitante_departamento': forms.Select(choices=[
+                ('', '— Selecione —'),
+                ('Geologia', 'Geologia'),
+                ('Análise Geoambiental', 'Análise Geoambiental'),
+                ('Geografia', 'Geografia'),
+                ('Administração', 'Administração'),
+                ('Laboratório', 'Laboratório'),
+                ('Outro', 'Outro'),
+            ]),
         }
 
     def __init__(self, *args, **kwargs):
-        # Permite pré-selecionar item via querystring (?item=pk)
         item_pk = kwargs.pop('item_pk', None)
         super().__init__(*args, **kwargs)
 
@@ -185,13 +224,14 @@ class MovimentacaoForm(forms.ModelForm):
                 Column('tipo',       css_class='col-md-4'),
             ),
             Row(
-                Column('quantidade',          css_class='col-md-4'),
-                Column('destino_origem',      css_class='col-md-8'),
+                Column('quantidade', css_class='col-md-4'),
+                Column('solicitante_nome', css_class='col-md-8'),
             ),
             Row(
-                Column('almoxarifado_destino',css_class='col-md-6'),
-                Column('fornecedor',          css_class='col-md-6'),
+                Column('solicitante_departamento', css_class='col-md-6'),
+                Column('almoxarifado_destino',     css_class='col-md-6'),
             ),
+            'fornecedor',
             'observacao',
             Div(
                 Submit('submit', 'Registrar Movimentação', css_class='btn btn-primary'),
@@ -201,9 +241,7 @@ class MovimentacaoForm(forms.ModelForm):
         )
 
     def clean(self):
-        """Delega a validação de negócio ao model."""
         cleaned = super().clean()
-        # Instância temporária para chamar o clean() do model
         if cleaned.get('item') and cleaned.get('tipo') and cleaned.get('quantidade'):
             obj = Movimentacao(
                 item=cleaned['item'],

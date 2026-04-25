@@ -6,6 +6,9 @@ from django.contrib.auth.decorators import login_required
 from . import views
 from .views import TrocarSenhaView
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 app_name = 'estoque'
 
 urlpatterns = [
@@ -58,4 +61,4 @@ urlpatterns = [
 
     # ── Relatórios ────────────────────────────────────────────────────────────
     path('relatorios/', views.relatorio_estoque, name='relatorio_estoque'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

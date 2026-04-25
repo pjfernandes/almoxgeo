@@ -93,6 +93,17 @@ def dashboard(request):
     )
     total_baixo_estoque = itens_baixo_estoque.count()
 
+    hoje = timezone.now().date()
+    limite_validade = hoje + datetime.timedelta(days=30)
+
+    itens_validade_critica = Item.objects.filter(
+        Q(data_validade__lte=limite_validade) & Q(data_validade__gte=hoje)
+    ).select_related('categoria', 'almoxarifado').order_by('data_validade')
+
+    itens_vencidos = Item.objects.filter(
+        data_validade__lt=hoje
+    ).select_related('categoria', 'almoxarifado').order_by('data_validade')
+
     # ── Últimas 10 movimentações ──────────────────────────────────────────────
     ultimas_movimentacoes = Movimentacao.objects.select_related(
         'item', 'almoxarifado', 'responsavel'
@@ -116,7 +127,7 @@ def dashboard(request):
 
     # Gerar todos os dias dos últimos 30 dias
     for i in range(30):
-        dia = (hoje - datetime.timedelta(days=29-i)).date()
+        dia = hoje - datetime.timedelta(days=29-i)
         dias_labels.append(dia.strftime('%d/%m'))
 
         entrada_dia = sum(
@@ -164,6 +175,11 @@ def dashboard(request):
         'pizza_labels': json.dumps(pizza_labels),
         'pizza_data':   json.dumps(pizza_data),
         'pizza_cores':  json.dumps(pizza_cores[:len(pizza_labels)]),
+
+        'itens_validade_critica': itens_validade_critica[:5],
+        'itens_vencidos': itens_vencidos[:5],
+        'total_validade_critica': itens_validade_critica.count(),
+        'total_vencidos': itens_vencidos.count(),
     }
 
     return render(request, 'estoque/dashboard.html', contexto)
@@ -489,26 +505,50 @@ def movimentacao_exportar_csv(request):
     writer = csv.writer(response, delimiter=';')
     # Cabeçalho
     writer.writerow([
-        'Data', 'Tipo', 'Item', 'Código', 'Almoxarifado',
-        'Quantidade', 'Qtd. Anterior', 'Qtd. Posterior',
-        'Destino/Origem', 'Fornecedor', 'Responsável', 'Observação'
-    ])
+         'Data', 'Tipo', 'Item', 'Código', 'Almoxarifado',
+         'Quantidade', 'Qtd. Anterior', 'Qtd. Posterior',
+        'Solicitante/Destino', 'Responsável', 'Observação'
+     ])
 
+    # for mov in filtro.qs:
+    #     writer.writerow([
+    #         mov.data_movimentacao.strftime('%d/%m/%Y %H:%M'),
+    #         mov.get_tipo_display(),
+    #         mov.item.nome,
+    #         mov.item.codigo_interno,
+    #         mov.almoxarifado.nome,
+    #         mov.quantidade,
+    #         mov.quantidade_anterior,
+    #         mov.quantidade_posterior,
+    #         mov.destino_origem or '',
+    #         mov.fornecedor.nome if mov.fornecedor else '',
+    #         mov.responsavel.nome_completo,
+    #         mov.observacao or '',
+    #     ])
     for mov in filtro.qs:
-        writer.writerow([
-            mov.data_movimentacao.strftime('%d/%m/%Y %H:%M'),
-            mov.get_tipo_display(),
-            mov.item.nome,
-            mov.item.codigo_interno,
-            mov.almoxarifado.nome,
-            mov.quantidade,
-            mov.quantidade_anterior,
-            mov.quantidade_posterior,
-            mov.destino_origem or '',
-            mov.fornecedor.nome if mov.fornecedor else '',
-            mov.responsavel.nome_completo,
-            mov.observacao or '',
-        ])
+            solicitante = ''
+            if mov.solicitante_nome:
+                solicitante = f"{mov.solicitante_nome}"
+                if mov.solicitante_departamento:
+                    solicitante += f" ({mov.solicitante_departamento})"
+            elif mov.almoxarifado_destino:
+                solicitante = f"→ {mov.almoxarifado_destino.nome}"
+            elif mov.fornecedor:
+                solicitante = mov.fornecedor.nome
+
+            writer.writerow([
+                mov.data_movimentacao.strftime('%d/%m/%Y %H:%M'),
+                mov.get_tipo_display(),
+                mov.item.nome,
+                mov.item.codigo_interno,
+                mov.almoxarifado.nome,
+                mov.quantidade,
+                mov.quantidade_anterior,
+                mov.quantidade_posterior,
+                solicitante,
+                mov.responsavel.nome_completo,
+                mov.observacao or '',
+            ])
 
     return response
 
@@ -558,10 +598,20 @@ def movimentacao_exportar_pdf(request):
     ))
 
     # Tabela de dados
-    cabecalho = ['Data', 'Tipo', 'Item', 'Almoxarifado', 'Qtd.', 'Anterior', 'Posterior', 'Responsável']
+    cabecalho = ['Data', 'Tipo', 'Item', 'Almoxarifado', 'Qtd.', 'Anterior', 'Posterior', 'Solicitante/Destino','Responsável']
     dados = [cabecalho]
 
     for mov in movimentacoes:
+        solicitante = ''
+        if mov.solicitante_nome:
+            solicitante = f"{mov.solicitante_nome}"
+            if mov.solicitante_departamento:
+                solicitante += f" ({mov.solicitante_departamento})"
+        elif mov.almoxarifado_destino:
+            solicitante = f"→ {mov.almoxarifado_destino.nome}"
+        elif mov.fornecedor:
+            solicitante = mov.fornecedor.nome
+
         dados.append([
             mov.data_movimentacao.strftime('%d/%m/%Y\n%H:%M'),
             mov.get_tipo_display(),
@@ -570,6 +620,7 @@ def movimentacao_exportar_pdf(request):
             str(mov.quantidade),
             str(mov.quantidade_anterior),
             str(mov.quantidade_posterior),
+            solicitante,
             mov.responsavel.nome_completo[:25],
         ])
 

@@ -33,6 +33,43 @@ class ItemFilter(django_filters.FilterSet):
             ('ok',    'Estoque normal'),
         ])
     )
+    validade = django_filters.CharFilter(
+        method='filtrar_validade',
+        label='Validade',
+        widget=forms.Select(choices=[
+            ('', 'Todas'),
+            ('vencida', 'Vencida'),
+            ('proxima', 'Vence em 30 dias'),
+            ('ok', 'Válida'),
+        ])
+    )
+
+    class Meta:
+        model  = Item
+        fields = ['nome', 'almoxarifado', 'categoria']
+
+    def filtrar_estoque(self, queryset, name, value):
+        from django.db.models import F
+        if value == 'baixo':
+            return queryset.filter(quantidade_atual__lt=F('quantidade_minima'))
+        elif value == 'ok':
+            return queryset.filter(quantidade_atual__gte=F('quantidade_minima'))
+        return queryset
+
+    def filtrar_validade(self, queryset, name, value):
+        from django.utils import timezone
+        import datetime
+        hoje = timezone.now().date()
+
+        if value == 'vencida':
+            return queryset.filter(data_validade__lt=hoje)
+        elif value == 'proxima':
+            limite = hoje + datetime.timedelta(days=30)
+            return queryset.filter(data_validade__gte=hoje, data_validade__lte=limite)
+        elif value == 'ok':
+            limite = hoje + datetime.timedelta(days=30)
+            return queryset.filter(data_validade__gt=limite)
+        return queryset
 
     class Meta:
         model  = Item

@@ -79,6 +79,7 @@
             <th class="text-end">Antes</th>
             <th class="text-end">Depois</th>
             <th>Responsável</th>
+            <th>Detalhes</th>
           </tr>
         </thead>
         <tbody>
@@ -107,11 +108,32 @@
             <td class="text-end fw-bold">{{ mov.quantidade }}</td>
             <td class="text-end text-muted small">{{ mov.quantidade_anterior }}</td>
             <td class="text-end small fw-semibold">{{ mov.quantidade_posterior }}</td>
+
+
             <td class="small">{{ mov.responsavel.nome_completo|truncatechars:25 }}</td>
+
+            <!-- INÍCIO DO BLOCO NOVO -->
+            <td class="small">
+              {% if mov.solicitante_nome %}
+              {{ mov.solicitante_nome }}
+              {% if mov.solicitante_departamento %}
+              <br><span class="text-muted" style="font-size:0.7rem;">
+                {{ mov.solicitante_departamento }}
+              </span>
+              {% endif %}
+              {% elif mov.almoxarifado_destino %}
+              <span class="text-info">→ {{ mov.almoxarifado_destino.nome }}</span>
+              {% elif mov.fornecedor %}
+              <span class="text-success">{{ mov.fornecedor.nome }}</span>
+              {% else %}
+              —
+              {% endif %}
+            </td>
+            <!-- FIM DO BLOCO NOVO -->
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="text-center text-muted py-4">
+            <td colspan="9" class="text-center text-muted py-4">
               <i class="bi bi-inbox fs-3 d-block mb-2"></i>
               Nenhuma movimentação encontrada.
             </td>

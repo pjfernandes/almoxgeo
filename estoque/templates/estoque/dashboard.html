@@ -70,6 +70,56 @@
     </div>
   </div>
 
+  <!-- Itens vencidos -->
+  <div class="col-6 col-lg-3">
+    <div class="card card-stat h-100 {% if total_vencidos > 0 %}border-danger{% endif %}">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div
+          class="card-icon {% if total_vencidos > 0 %}bg-danger text-white{% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}">
+          <i class="bi bi-calendar-x"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold {% if total_vencidos > 0 %}text-danger{% endif %}">
+            {{ total_vencidos }}
+          </div>
+          <div class="text-muted small">Itens vencidos</div>
+        </div>
+      </div>
+      {% if total_vencidos > 0 %}
+      <div class="card-footer bg-danger bg-opacity-10 py-1">
+        <a href="{% url 'estoque:item_lista' %}?validade=vencida" class="text-danger small text-decoration-none">
+          <i class="bi bi-arrow-right me-1"></i>Ver itens
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Itens próximos a vencer -->
+  <div class="col-6 col-lg-3">
+    <div class="card card-stat h-100 {% if total_validade_critica > 0 %}border-warning{% endif %}">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div
+          class="card-icon {% if total_validade_critica > 0 %}bg-warning text-white{% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold {% if total_validade_critica > 0 %}text-warning{% endif %}">
+            {{ total_validade_critica }}
+          </div>
+          <div class="text-muted small">Vencem em 30 dias</div>
+        </div>
+      </div>
+      {% if total_validade_critica > 0 %}
+      <div class="card-footer bg-warning bg-opacity-10 py-1">
+        <a href="{% url 'estoque:item_lista' %}?validade=proxima" class="text-warning small text-decoration-none">
+          <i class="bi bi-arrow-right me-1"></i>Ver itens
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
   <!-- Movimentações hoje -->
   <div class="col-6 col-lg-3">
     <div class="card card-stat h-100">
@@ -146,6 +196,7 @@
             <th>Tipo</th>
             <th>Item</th>
             <th>Almoxarifado</th>
+            <th>Destino</th>
             <th class="text-end">Qtd</th>
             <th>Responsável</th>
           </tr>
@@ -169,6 +220,15 @@
             </td>
             <td>{{ mov.item.nome }}</td>
             <td class="text-muted small">{{ mov.almoxarifado.nome }}</td>
+            <td class="small">
+              {% if mov.solicitante_nome %}
+              {{ mov.solicitante_nome }}
+              {% elif mov.almoxarifado_destino %}
+              <span class="text-info">→ {{ mov.almoxarifado_destino.nome }}</span>
+              {% else %}
+              —
+              {% endif %}
+            </td>
             <td class="text-end">
               {{ mov.quantidade }} {{ mov.item.unidade_medida }}
             </td>
