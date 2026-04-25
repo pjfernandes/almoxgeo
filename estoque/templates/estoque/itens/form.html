@@ -1,0 +1,36 @@
+{% extends 'estoque/base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'estoque:item_lista' %}">Itens</a></li>
+    <li class="breadcrumb-item active">{{ titulo }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>{{ titulo }}</h5>
+      </div>
+      <div class="card-body">
+        {% if objeto %}
+        <div class="alert alert-info py-2 mb-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Código interno:</strong> {{ objeto.codigo_interno }}
+          &nbsp;|&nbsp;
+          <strong>Para ajustar a quantidade</strong>, use uma movimentação do tipo "Ajuste".
+        </div>
+        {% endif %}
+        {% crispy form %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,302 @@
+{% extends 'estoque/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item active">Dashboard</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Cards de resumo ──────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Almoxarifados ativos -->
+  <div class="col-6 col-lg-3">
+    <div class="card card-stat h-100">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="card-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-building"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold text-primary">{{ total_almoxarifados }}</div>
+          <div class="text-muted small">Almoxarifados ativos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total de itens -->
+  <div class="col-6 col-lg-3">
+    <div class="card card-stat h-100">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="card-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold text-success">{{ total_itens }}</div>
+          <div class="text-muted small">Itens cadastrados</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estoque baixo — alerta vermelho -->
+  <div class="col-6 col-lg-3">
+    <div class="card card-stat h-100 {% if total_baixo_estoque > 0 %}border-danger{% endif %}">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div
+          class="card-icon {% if total_baixo_estoque > 0 %}bg-danger text-white{% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold {% if total_baixo_estoque > 0 %}text-danger{% endif %}">
+            {{ total_baixo_estoque }}
+          </div>
+          <div class="text-muted small">Estoque abaixo do mínimo</div>
+        </div>
+      </div>
+      {% if total_baixo_estoque > 0 %}
+      <div class="card-footer bg-danger bg-opacity-10 py-1">
+        <a href="{% url 'estoque:item_lista' %}?estoque=baixo" class="text-danger small text-decoration-none">
+          <i class="bi bi-arrow-right me-1"></i>Ver itens
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Movimentações hoje -->
+  <div class="col-6 col-lg-3">
+    <div class="card card-stat h-100">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="card-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold text-warning">
+            {{ ultimas_movimentacoes|length }}
+          </div>
+          <div class="text-muted small">Últimas movimentações</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /cards -->
+
+
+<!-- ── Gráficos ─────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Gráfico de barras: movimentações 30 dias -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-semibold">
+          <i class="bi bi-bar-chart me-2 text-primary"></i>
+          Movimentações — últimos 30 dias
+        </h6>
+      </div>
+      <div class="card-body">
+        <canvas id="graficoBarras" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de pizza: itens por categoria -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">
+          <i class="bi bi-pie-chart me-2 text-primary"></i>
+          Itens por categoria
+        </h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="graficoPizza" style="max-height:220px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /gráficos -->
+
+
+<!-- ── Tabela de últimas movimentações ─────────────────────────────────── -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h6 class="mb-0 fw-semibold">
+      <i class="bi bi-clock-history me-2 text-primary"></i>
+      Últimas movimentações
+    </h6>
+    <a href="{% url 'estoque:movimentacao_lista' %}" class="btn btn-sm btn-outline-primary">
+      Ver todas
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Item</th>
+            <th>Almoxarifado</th>
+            <th class="text-end">Qtd</th>
+            <th>Responsável</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mov in ultimas_movimentacoes %}
+          <tr>
+            <td class="text-nowrap text-muted small">
+              {{ mov.data_movimentacao|date:"d/m/Y H:i" }}
+            </td>
+            <td>
+              {% if mov.tipo == 'ENTRADA' %}
+              <span class="badge bg-success">Entrada</span>
+              {% elif mov.tipo == 'SAIDA' %}
+              <span class="badge bg-danger">Saída</span>
+              {% elif mov.tipo == 'AJUSTE' %}
+              <span class="badge bg-warning text-dark">Ajuste</span>
+              {% else %}
+              <span class="badge bg-info text-dark">Transferência</span>
+              {% endif %}
+            </td>
+            <td>{{ mov.item.nome }}</td>
+            <td class="text-muted small">{{ mov.almoxarifado.nome }}</td>
+            <td class="text-end">
+              {{ mov.quantidade }} {{ mov.item.unidade_medida }}
+            </td>
+            <td class="small">{{ mov.responsavel.nome_completo|truncatechars:25 }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              Nenhuma movimentação registrada ainda.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Prévia de estoque baixo ──────────────────────────────────────────── -->
+{% if itens_baixo_estoque %}
+<div class="card border-danger shadow-sm">
+  <div class="card-header bg-danger text-white py-3">
+    <h6 class="mb-0 fw-semibold">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      Itens com estoque abaixo do mínimo
+    </h6>
+  </div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Item</th>
+          <th>Almoxarifado</th>
+          <th class="text-end">Atual</th>
+          <th class="text-end">Mínimo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in itens_baixo_estoque %}
+        <tr>
+          <td>
+            <a href="{% url 'estoque:item_detalhe' item.pk %}">{{ item.nome }}</a>
+          </td>
+          <td class="text-muted small">{{ item.almoxarifado.nome }}</td>
+          <td class="text-end text-danger fw-bold">{{ item.quantidade_atual }}</td>
+          <td class="text-end">{{ item.quantidade_minima }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  // Dados vindos do Django (JSON seguro via template)
+  const diasLabels = {{ grafico_dias_labels| safe }};
+  const entradas = {{ grafico_entradas| safe }};
+  const saidas = {{ grafico_saidas| safe }};
+  const pizzaLabels = {{ pizza_labels| safe }};
+  const pizzaData = {{ pizza_data| safe }};
+  const pizzaCores = {{ pizza_cores| safe }};
+
+  // ── Gráfico de barras ──────────────────────────────────────────────────────
+  new Chart(document.getElementById('graficoBarras'), {
+    type: 'bar',
+    data: {
+      labels: diasLabels,
+      datasets: [
+        {
+          label: 'Entradas',
+          data: entradas,
+          backgroundColor: 'rgba(25, 135, 84, 0.7)',
+          borderColor: 'rgba(25, 135, 84, 1)',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: 'Saídas / Transferências',
+          data: saidas,
+          backgroundColor: 'rgba(220, 53, 69, 0.7)',
+          borderColor: 'rgba(220, 53, 69, 1)',
+          borderWidth: 1,
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+
+  // ── Gráfico de pizza ───────────────────────────────────────────────────────
+  if (pizzaData.length > 0) {
+    new Chart(document.getElementById('graficoPizza'), {
+      type: 'doughnut',
+      data: {
+        labels: pizzaLabels,
+        datasets: [{
+          data: pizzaData,
+          backgroundColor: pizzaCores,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 } } }
+        }
+      }
+    });
+  } else {
+    document.getElementById('graficoPizza').parentElement.innerHTML =
+      '<p class="text-center text-muted py-4">Nenhuma categoria com itens cadastrados.</p>';
+  }
+</script>
+{% endblock %}

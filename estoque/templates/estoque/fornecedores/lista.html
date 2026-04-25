@@ -1,0 +1,64 @@
+{% extends 'estoque/base.html' %}
+{% block title %}Fornecedores{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Fornecedores</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Fornecedores</h5>
+  <a href="{% url 'estoque:fornecedor_criar' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Novo Fornecedor
+  </a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Nome</th>
+          <th>CNPJ</th>
+          <th>Contato</th>
+          <th class="text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for forn in page_obj %}
+        <tr>
+          <td class="fw-semibold">{{ forn.nome }}</td>
+          <td class="small text-muted">{{ forn.cnpj|default:"—" }}</td>
+          <td class="small">{{ forn.contato|default:"—" }}</td>
+          <td class="text-center">
+            <a href="{% url 'estoque:fornecedor_editar' forn.pk %}" class="btn btn-sm btn-outline-primary"><i
+                class="bi bi-pencil"></i></a>
+            <form method="post" action="{% url 'estoque:fornecedor_excluir' forn.pk %}" class="d-inline"
+              onsubmit="return confirm('Excluir fornecedor {{ forn.nome }}?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-center text-muted py-4">
+            <i class="bi bi-inbox fs-3 d-block mb-2"></i>Nenhum fornecedor cadastrado.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page_obj.has_other_pages %}
+  <div class="card-footer bg-white">{% include 'estoque/includes/paginacao.html' %}</div>
+  {% endif %}
+</div>
+{% endblock %}

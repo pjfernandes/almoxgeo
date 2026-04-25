@@ -1,0 +1,52 @@
+{% extends 'estoque/base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'estoque:movimentacao_lista' %}">Movimentações</a></li>
+    <li class="breadcrumb-item active">{{ titulo }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>{{ titulo }}</h5>
+      </div>
+      <div class="card-body">
+        <!-- Dica sobre campos condicionais -->
+        <div class="alert alert-info py-2 mb-3 small">
+          <i class="bi bi-info-circle me-1"></i>
+          <strong>Transferência:</strong> informe o almoxarifado de destino.<br>
+          <strong>Entrada:</strong> informe o fornecedor (opcional).<br>
+          <strong>Ajuste:</strong> o campo "Quantidade" será o novo valor absoluto do estoque.
+        </div>
+        {% crispy form %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Mostrar/ocultar campos condicionais conforme o tipo de movimentação
+  const tipoSelect = document.getElementById('id_tipo');
+  const campoDestino = document.getElementById('id_almoxarifado_destino').closest('.col-md-6');
+  const campoFornecedor = document.getElementById('id_fornecedor').closest('.col-md-6');
+
+  function atualizarCampos() {
+    const tipo = tipoSelect.value;
+    campoDestino.style.display = tipo === 'TRANSFERENCIA' ? 'block' : 'none';
+    campoFornecedor.style.display = tipo === 'ENTRADA' ? 'block' : 'none';
+  }
+
+  tipoSelect.addEventListener('change', atualizarCampos);
+  // Executar ao carregar
+  atualizarCampos();
+</script>
+{% endblock %}

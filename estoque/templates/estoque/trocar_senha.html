@@ -1,0 +1,28 @@
+{% extends 'estoque/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Trocar Senha{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Trocar Senha</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0"><i class="bi bi-key me-2"></i>Trocar Senha</h5>
+      </div>
+      <div class="card-body">
+        {% crispy form %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

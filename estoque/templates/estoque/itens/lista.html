@@ -1,0 +1,155 @@
+{% extends 'estoque/base.html' %}
+{% block title %}Itens{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Itens</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Itens</h5>
+  <a href="{% url 'estoque:item_criar' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Novo Item
+  </a>
+</div>
+
+<!-- Filtros -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Nome</label>
+        {{ filtro.form.nome }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Almoxarifado</label>
+        {{ filtro.form.almoxarifado }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Categoria</label>
+        {{ filtro.form.categoria }}
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Situação</label>
+        {{ filtro.form.estoque }}
+      </div>
+      <div class="col-md-1 d-flex gap-1">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="bi bi-search"></i>
+        </button>
+        <a href="{% url 'estoque:item_lista' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-x"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Código</th>
+            <th>Nome</th>
+            <th>Categoria</th>
+            <th>Almoxarifado</th>
+            <th class="text-end">Qtd. Atual</th>
+            <th class="text-end">Qtd. Mínima</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page_obj %}
+          <tr {% if item.estoque_baixo %}class="table-warning" {% endif %}>
+            <td class="text-muted small font-monospace">{{ item.codigo_interno }}</td>
+            <td>
+              <a href="{% url 'estoque:item_detalhe' item.pk %}" class="fw-semibold text-decoration-none">
+                {{ item.nome }}
+              </a>
+              {% if item.localizacao_fisica %}
+              <div class="text-muted" style="font-size:0.75rem;">
+                <i class="bi bi-geo-alt me-1"></i>{{ item.localizacao_fisica }}
+              </div>
+              {% endif %}
+            </td>
+            <td>
+              <i class="bi bi-{{ item.categoria.icone }} text-primary me-1"></i>
+              {{ item.categoria.nome }}
+            </td>
+            <td class="small text-muted">{{ item.almoxarifado.nome }}</td>
+            <td class="text-end fw-bold {% if item.estoque_baixo %}text-danger{% endif %}">
+              {{ item.quantidade_atual }} {{ item.unidade_medida }}
+            </td>
+            <td class="text-end text-muted small">{{ item.quantidade_minima }}</td>
+            <td class="text-center">
+              {% if item.estoque_baixo %}
+              <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>Baixo</span>
+              {% else %}
+              <span class="badge bg-success">Normal</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{% url 'estoque:item_detalhe' item.pk %}" class="btn btn-sm btn-outline-secondary"
+                title="Detalhe">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{% url 'estoque:item_editar' item.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              Nenhum item encontrado.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if page_obj.has_other_pages %}
+  <div class="card-footer bg-white">{% include 'estoque/includes/paginacao.html' %}</div>
+  {% endif %}
+</div>
+
+<style>
+  /* Estilizar selects e inputs do filtro */
+  #id_nome,
+  #id_almoxarifado,
+  #id_categoria,
+  #id_estoque {
+    font-size: 0.875rem;
+  }
+
+  select {
+    class: form-select form-select-sm;
+  }
+
+  input[type=text] {
+    class: form-control form-control-sm;
+  }
+</style>
+
+<script>
+  // Aplicar classes Bootstrap aos campos de filtro gerados pelo django-filter
+  document.querySelectorAll('.card select, .card input[type=text]').forEach(el => {
+    el.classList.add('form-select', 'form-select-sm');
+    if (el.tagName === 'INPUT') {
+      el.classList.remove('form-select', 'form-select-sm');
+      el.classList.add('form-control', 'form-control-sm');
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends 'estoque/base.html' %}
+{% block title %}{{ item.nome }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'estoque:item_lista' %}">Itens</a></li>
+    <li class="breadcrumb-item active">{{ item.nome }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <!-- Dados do item -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-white py-3 d-flex justify-content-between">
+        <h6 class="mb-0 fw-semibold">
+          <i class="bi bi-box-seam me-2"></i>Dados do Item
+        </h6>
+        <a href="{% url 'estoque:item_editar' item.pk %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </a>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5 text-muted small">Código interno</dt>
+          <dd class="col-sm-7 font-monospace">{{ item.codigo_interno }}</dd>
+
+          <dt class="col-sm-5 text-muted small">Categoria</dt>
+          <dd class="col-sm-7">
+            <i class="bi bi-{{ item.categoria.icone }} text-primary me-1"></i>
+            {{ item.categoria.nome }}
+          </dd>
+
+          <dt class="col-sm-5 text-muted small">Almoxarifado</dt>
+          <dd class="col-sm-7">{{ item.almoxarifado.nome }}</dd>
+
+          <dt class="col-sm-5 text-muted small">Unidade</dt>
+          <dd class="col-sm-7">{{ item.get_unidade_medida_display }}</dd>
+
+          <dt class="col-sm-5 text-muted small">Localização física</dt>
+          <dd class="col-sm-7">{{ item.localizacao_fisica|default:"—" }}</dd>
+
+          <dt class="col-sm-5 text-muted small">Cadastrado em</dt>
+          <dd class="col-sm-7 small">{{ item.data_cadastro|date:"d/m/Y H:i" }}</dd>
+
+          {% if item.descricao %}
+          <dt class="col-sm-5 text-muted small">Descrição</dt>
+          <dd class="col-sm-7 small">{{ item.descricao }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards de quantidade -->
+  <div class="col-lg-7">
+    <div class="row g-3 h-100">
+      <div class="col-6">
+        <div class="card shadow-sm h-100 text-center
+          {% if item.estoque_baixo %}border-danger{% else %}border-success{% endif %}">
+          <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+            <div class="display-4 fw-bold
+              {% if item.estoque_baixo %}text-danger{% else %}text-success{% endif %}">
+              {{ item.quantidade_atual }}
+            </div>
+            <div class="text-muted small mt-1">Quantidade atual</div>
+            <div class="mt-2">
+              {% if item.estoque_baixo %}
+              <span class="badge bg-danger">
+                <i class="bi bi-exclamation-triangle me-1"></i>Estoque baixo
+              </span>
+              {% else %}
+              <span class="badge bg-success">Estoque normal</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card shadow-sm h-100 text-center">
+          <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+            <div class="display-4 fw-bold text-secondary">
+              {{ item.quantidade_minima }}
+            </div>
+            <div class="text-muted small mt-1">Quantidade mínima</div>
+          </div>
+        </div>
+      </div>
+      <!-- Botão de nova movimentação -->
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body text-center py-3">
+            <a href="{% url 'estoque:movimentacao_criar' %}?item={{ item.pk }}" class="btn btn-primary">
+              <i class="bi bi-arrow-left-right me-2"></i>Registrar Movimentação
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Histórico de movimentações -->
+<div class="card shadow-sm">
+  <div class="card-header bg-white py-3">
+    <h6 class="mb-0 fw-semibold">
+      <i class="bi bi-clock-history me-2"></i>Histórico de movimentações
+    </h6>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th class="text-end">Qtd.</th>
+            <th class="text-end">Anterior</th>
+            <th class="text-end">Posterior</th>
+            <th>Destino/Origem</th>
+            <th>Responsável</th>
+            <th>Obs.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mov in movimentacoes %}
+          <tr>
+            <td class="text-nowrap text-muted small">
+              {{ mov.data_movimentacao|date:"d/m/Y H:i" }}
+            </td>
+            <td>
+              {% if mov.tipo == 'ENTRADA' %}
+              <span class="badge bg-success">Entrada</span>
+              {% elif mov.tipo == 'SAIDA' %}
+              <span class="badge bg-danger">Saída</span>
+              {% elif mov.tipo == 'AJUSTE' %}
+              <span class="badge bg-warning text-dark">Ajuste</span>
+              {% else %}
+              <span class="badge bg-info text-dark">Transferência</span>
+              {% endif %}
+            </td>
+            <td class="text-end fw-bold">{{ mov.quantidade }}</td>
+            <td class="text-end text-muted">{{ mov.quantidade_anterior }}</td>
+            <td class="text-end fw-semibold">{{ mov.quantidade_posterior }}</td>
+            <td class="small">
+              {{ mov.destino_origem|default:"—" }}
+              {% if mov.almoxarifado_destino %}
+              <span class="text-info">→ {{ mov.almoxarifado_destino.nome }}</span>
+              {% endif %}
+              {% if mov.fornecedor %}
+              <span class="text-success">{{ mov.fornecedor.nome }}</span>
+              {% endif %}
+            </td>
+            <td class="small">{{ mov.responsavel.nome_completo|truncatechars:20 }}</td>
+            <td class="small text-muted">{{ mov.observacao|truncatechars:30|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              Nenhuma movimentação registrada para este item.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

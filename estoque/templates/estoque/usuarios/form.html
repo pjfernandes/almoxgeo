@@ -1,0 +1,26 @@
+{% extends 'estoque/base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'estoque:usuario_lista' %}">Usuários</a></li>
+    <li class="breadcrumb-item active">{{ titulo }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0"><i class="bi bi-person me-2"></i>{{ titulo }}</h5>
+      </div>
+      <div class="card-body">{% crispy form %}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

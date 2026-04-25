@@ -1,0 +1,82 @@
+{% extends 'estoque/base.html' %}
+{% block title %}Almoxarifados{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Almoxarifados</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0"><i class="bi bi-building me-2"></i>Almoxarifados</h5>
+  <a href="{% url 'estoque:almoxarifado_criar' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Novo Almoxarifado
+  </a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Nome</th>
+            <th>Localização</th>
+            <th>Responsável</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alm in page_obj %}
+          <tr>
+            <td class="fw-semibold">{{ alm.nome }}</td>
+            <td class="text-muted small">{{ alm.localizacao }}</td>
+            <td class="small">{{ alm.responsavel.nome_completo }}</td>
+            <td class="text-center">
+              {% if alm.ativo %}
+              <span class="badge bg-success">Ativo</span>
+              {% else %}
+              <span class="badge bg-secondary">Inativo</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <a href="{% url 'estoque:almoxarifado_editar' alm.pk %}" class="btn btn-sm btn-outline-primary"
+                title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="post" action="{% url 'estoque:almoxarifado_toggle' alm.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit"
+                  class="btn btn-sm {% if alm.ativo %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                  title="{% if alm.ativo %}Desativar{% else %}Ativar{% endif %}">
+                  <i class="bi bi-{% if alm.ativo %}pause-circle{% else %}play-circle{% endif %}"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              Nenhum almoxarifado cadastrado.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Paginação -->
+  {% if page_obj.has_other_pages %}
+  <div class="card-footer bg-white">
+    {% include 'estoque/includes/paginacao.html' %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

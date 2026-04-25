@@ -1,0 +1,98 @@
+{% extends 'estoque/base.html' %}
+{% block title %}Relatório de Estoque{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Relatório de Estoque</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0"><i class="bi bi-file-earmark-bar-graph me-2"></i>Relatório de Estoque Atual</h5>
+  <div class="d-flex gap-2">
+    <a href="?exportar=csv" class="btn btn-sm btn-outline-success">
+      <i class="bi bi-filetype-csv me-1"></i>Exportar CSV
+    </a>
+    <a href="?exportar=pdf" class="btn btn-sm btn-outline-danger">
+      <i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF
+    </a>
+  </div>
+</div>
+
+{% for alm in almoxarifados %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header py-3" style="background-color:#003366; color:white;">
+    <div class="d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-semibold">
+        <i class="bi bi-building me-2"></i>{{ alm.nome }}
+      </h6>
+      <span class="badge bg-white text-primary">
+        {{ alm.localizacao }}
+      </span>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Código</th>
+            <th>Item</th>
+            <th>Categoria</th>
+            <th>Unidade</th>
+            <th class="text-end">Qtd. Atual</th>
+            <th class="text-end">Mínimo</th>
+            <th class="text-center">Situação</th>
+            <th>Localização Física</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in alm.itens.all %}
+          <tr {% if item.estoque_baixo %}class="table-warning" {% endif %}>
+            <td class="small font-monospace text-muted">{{ item.codigo_interno }}</td>
+            <td>
+              <a href="{% url 'estoque:item_detalhe' item.pk %}" class="text-decoration-none">
+                {{ item.nome }}
+              </a>
+            </td>
+            <td class="small">
+              <i class="bi bi-{{ item.categoria.icone }} text-primary me-1"></i>
+              {{ item.categoria.nome }}
+            </td>
+            <td class="small">{{ item.get_unidade_medida_display }}</td>
+            <td class="text-end fw-bold {% if item.estoque_baixo %}text-danger{% endif %}">
+              {{ item.quantidade_atual }}
+            </td>
+            <td class="text-end text-muted small">{{ item.quantidade_minima }}</td>
+            <td class="text-center">
+              {% if item.estoque_baixo %}
+              <span class="badge bg-danger">Baixo</span>
+              {% else %}
+              <span class="badge bg-success">OK</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ item.localizacao_fisica|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-3">
+              Nenhum item neste almoxarifado.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-2"></i>
+  Nenhum almoxarifado ativo encontrado.
+</div>
+{% endfor %}
+{% endblock %}

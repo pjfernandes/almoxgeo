@@ -1,0 +1,135 @@
+{% extends 'estoque/base.html' %}
+{% block title %}Movimentações{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Movimentações</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Movimentações</h5>
+  <div class="d-flex gap-2">
+    <a href="{% url 'estoque:movimentacao_exportar_csv' %}?{{ request.GET.urlencode }}"
+      class="btn btn-sm btn-outline-success">
+      <i class="bi bi-filetype-csv me-1"></i>CSV
+    </a>
+    <a href="{% url 'estoque:movimentacao_exportar_pdf' %}?{{ request.GET.urlencode }}"
+      class="btn btn-sm btn-outline-danger">
+      <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+    </a>
+    <a href="{% url 'estoque:movimentacao_criar' %}" class="btn btn-sm btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>Nova Movimentação
+    </a>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small mb-1">Item</label>
+        {{ filtro.form.item__nome }}
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Almoxarifado</label>
+        {{ filtro.form.almoxarifado }}
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Tipo</label>
+        {{ filtro.form.tipo }}
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">De</label>
+        {{ filtro.form.data_inicio }}
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Até</label>
+        {{ filtro.form.data_fim }}
+      </div>
+      <div class="col-md-1 d-flex gap-1">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="bi bi-search"></i>
+        </button>
+        <a href="{% url 'estoque:movimentacao_lista' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-x"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Item</th>
+            <th>Almoxarifado</th>
+            <th class="text-end">Quantidade</th>
+            <th class="text-end">Antes</th>
+            <th class="text-end">Depois</th>
+            <th>Responsável</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mov in page_obj %}
+          <tr>
+            <td class="text-nowrap text-muted small">
+              {{ mov.data_movimentacao|date:"d/m/Y H:i" }}
+            </td>
+            <td>
+              {% if mov.tipo == 'ENTRADA' %}
+              <span class="badge bg-success">Entrada</span>
+              {% elif mov.tipo == 'SAIDA' %}
+              <span class="badge bg-danger">Saída</span>
+              {% elif mov.tipo == 'AJUSTE' %}
+              <span class="badge bg-warning text-dark">Ajuste</span>
+              {% else %}
+              <span class="badge bg-info text-dark">Transferência</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'estoque:item_detalhe' mov.item.pk %}" class="text-decoration-none">
+                {{ mov.item.nome }}
+              </a>
+            </td>
+            <td class="small text-muted">{{ mov.almoxarifado.nome }}</td>
+            <td class="text-end fw-bold">{{ mov.quantidade }}</td>
+            <td class="text-end text-muted small">{{ mov.quantidade_anterior }}</td>
+            <td class="text-end small fw-semibold">{{ mov.quantidade_posterior }}</td>
+            <td class="small">{{ mov.responsavel.nome_completo|truncatechars:25 }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              Nenhuma movimentação encontrada.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if page_obj.has_other_pages %}
+  <div class="card-footer bg-white">{% include 'estoque/includes/paginacao.html' %}</div>
+  {% endif %}
+</div>
+
+<script>
+  document.querySelectorAll('.card select, .card input').forEach(el => {
+    if (el.tagName === 'SELECT') el.classList.add('form-select', 'form-select-sm');
+    else el.classList.add('form-control', 'form-control-sm');
+  });
+</script>
+{% endblock %}
