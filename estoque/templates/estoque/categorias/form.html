@@ -1,15 +1,8 @@
 {% extends 'estoque/base.html' %}
-{% load crispy_forms_tags %}
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block breadcrumb %}
-<nav aria-label="breadcrumb" class="mb-3">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'estoque:categoria_lista' %}">Categorias</a></li>
-    <li class="breadcrumb-item active">{{ titulo }}</li>
-  </ol>
-</nav>
+  {% include 'estoque/includes/breadcrumb.html' %}
 {% endblock %}
 
 {% block content %}
@@ -20,15 +13,200 @@
         <h5 class="mb-0"><i class="bi bi-tags me-2"></i>{{ titulo }}</h5>
       </div>
       <div class="card-body">
-        {% crispy form %}
+        <form method="post">
+          {% csrf_token %}
+
+          <!-- Nome -->
+          <div class="mb-3">
+            <label for="id_nome" class="form-label">Nome da Categoria <span class="text-danger">*</span></label>
+            {{ form.nome }}
+            {% if form.nome.errors %}
+            <div class="text-danger small mt-1">{{ form.nome.errors }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Ícone com seletor visual -->
+          <div class="mb-3">
+            <label class="form-label">Ícone (opcional)</label>
+            <input type="hidden" id="id_icone" name="icone" value="{{ form.instance.icone|default:'box-seam' }}">
+
+            <div class="border rounded p-3 text-center" style="cursor:pointer; transition: all 0.2s;"
+              onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'"
+              onclick="document.getElementById('modalIcones').style.display='flex'">
+              <i class="bi bi-{{ form.instance.icone|default:'box-seam' }}" id="iconePreview"
+                style="font-size:3rem; color:#003366;"></i>
+              <div class="text-muted small mt-2">
+                <i class="bi bi-hand-index me-1"></i>
+                Clique para escolher um ícone
+              </div>
+            </div>
+          </div>
+
+          <!-- Descrição -->
+          <div class="mb-3">
+            <label for="id_descricao" class="form-label">Descrição</label>
+            {{ form.descricao }}
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>Salvar
+            </button>
+            <a href="{% url 'estoque:categoria_lista' %}" class="btn btn-secondary">
+              <i class="bi bi-x-lg me-1"></i>Cancelar
+            </a>
+          </div>
+        </form>
       </div>
-      {% if form.instance.icone %}
-      <div class="card-footer bg-light text-center">
-        <small class="text-muted">Prévia do ícone: </small>
-        <i class="bi bi-{{ form.instance.icone }} fs-4 text-primary ms-2"></i>
-      </div>
-      {% endif %}
     </div>
   </div>
 </div>
+
+<!-- Modal de seleção de ícones -->
+<div id="modalIcones"
+  style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+  <div
+    style="max-width:700px; width:90%; background:white; border-radius:12px; padding:24px; max-height:80vh; overflow:auto;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0"><i class="bi bi-palette me-2"></i>Escolha um ícone</h5>
+      <button type="button" class="btn-close"
+        onclick="document.getElementById('modalIcones').style.display='none'"></button>
+    </div>
+
+    <!-- Busca de ícone -->
+    <input type="text" id="buscaIcone" class="form-control mb-3" placeholder="🔍 Buscar ícone..."
+      onkeyup="filtrarIcones(this.value)">
+
+    <div class="row g-2" id="gridIcones">
+      <!-- Será preenchido por JavaScript -->
+    </div>
+  </div>
+</div>
+
+<script>
+  // Lista de ícones Bootstrap recomendados para categorias de almoxarifado
+  const icones = [
+    // Materiais gerais
+    { nome: 'box-seam', desc: 'Caixa' },
+    { nome: 'box', desc: 'Pacote' },
+    { nome: 'boxes', desc: 'Múltiplas caixas' },
+    { nome: 'archive', desc: 'Arquivo' },
+    { nome: 'clipboard-check', desc: 'Checklist' },
+
+    // Ferramentas
+    { nome: 'tools', desc: 'Ferramentas' },
+    { nome: 'wrench', desc: 'Chave' },
+    { nome: 'hammer', desc: 'Martelo' },
+    { nome: 'screwdriver', desc: 'Chave de fenda' },
+    { nome: 'gear', desc: 'Engrenagem' },
+
+    // Escritório
+    { nome: 'pencil', desc: 'Lápis' },
+    { nome: 'pen', desc: 'Caneta' },
+    { nome: 'eraser', desc: 'Borracha' },
+    { nome: 'scissors', desc: 'Tesoura' },
+    { nome: 'rulers', desc: 'Réguas' },
+
+    // Tecnologia
+    { nome: 'printer', desc: 'Impressora' },
+    { nome: 'laptop', desc: 'Laptop' },
+    { nome: 'keyboard', desc: 'Teclado' },
+    { nome: 'mouse', desc: 'Mouse' },
+    { nome: 'usb', desc: 'USB' },
+    { nome: 'hdd', desc: 'HD' },
+
+    // Laboratório
+    { nome: 'flask', desc: 'Béquer' },
+    { nome: 'eyedropper', desc: 'Conta-gotas' },
+    { nome: 'thermometer', desc: 'Termômetro' },
+    { nome: 'bandaid', desc: 'Primeiros socorros' },
+    { nome: 'heart-pulse', desc: 'Saúde' },
+    { nome: 'capsule', desc: 'Cápsula' },
+
+    // Limpeza
+    { nome: 'droplet', desc: 'Líquido' },
+    { nome: 'bucket', desc: 'Balde' },
+    { nome: 'spray-can', desc: 'Spray' },
+    { nome: 'recycle', desc: 'Reciclagem' },
+    { nome: 'trash', desc: 'Lixo' },
+
+    // Documentos
+    { nome: 'book', desc: 'Livro' },
+    { nome: 'journal', desc: 'Diário' },
+    { nome: 'folder', desc: 'Pasta' },
+    { nome: 'file-earmark', desc: 'Arquivo' },
+    { nome: 'files', desc: 'Arquivos' },
+
+    // Outros
+    { nome: 'cart', desc: 'Carrinho' },
+    { nome: 'bag', desc: 'Bolsa' },
+    { nome: 'briefcase', desc: 'Maleta' },
+    { nome: 'lightbulb', desc: 'Lâmpada' },
+    { nome: 'plug', desc: 'Tomada' },
+    { nome: 'battery', desc: 'Bateria' },
+    { nome: 'shield', desc: 'Proteção' },
+    { nome: 'lock', desc: 'Cadeado' },
+    { nome: 'key', desc: 'Chave' },
+    { nome: 'house', desc: 'Casa' },
+    { nome: 'building', desc: 'Prédio' },
+    { nome: 'tree', desc: 'Árvore' },
+    { nome: 'flower1', desc: 'Flor' },
+    { nome: 'star', desc: 'Estrela' },
+    { nome: 'award', desc: 'Prêmio' },
+    { nome: 'gift', desc: 'Presente' },
+  ];
+
+  // Gerar grid de ícones
+  const grid = document.getElementById('gridIcones');
+  icones.forEach(icone => {
+    const div = document.createElement('div');
+    div.className = 'col-3 col-md-2';
+    div.setAttribute('data-nome', icone.nome);
+    div.setAttribute('data-desc', icone.desc.toLowerCase());
+    div.innerHTML = `
+    <div class="border rounded p-2 text-center icone-item"
+         style="cursor:pointer; transition:all 0.2s;"
+         onmouseover="this.style.background='#e8f0fe'; this.style.borderColor='#003366';"
+         onmouseout="this.style.background='white'; this.style.borderColor='#dee2e6';"
+         onclick="selecionarIcone('${icone.nome}')"
+         title="${icone.desc}">
+      <i class="bi bi-${icone.nome}" style="font-size:1.8rem; color:#003366;"></i>
+      <div style="font-size:0.65rem; margin-top:4px; color:#666;">${icone.desc}</div>
+    </div>
+  `;
+    grid.appendChild(div);
+  });
+
+  function selecionarIcone(icone) {
+    document.getElementById('id_icone').value = icone;
+    document.getElementById('iconePreview').className = `bi bi-${icone}`;
+    document.getElementById('modalIcones').style.display = 'none';
+    document.getElementById('buscaIcone').value = '';
+    filtrarIcones(''); // Resetar filtro
+  }
+
+  function filtrarIcones(busca) {
+    busca = busca.toLowerCase();
+    grid.querySelectorAll('[data-nome]').forEach(item => {
+      const nome = item.getAttribute('data-nome');
+      const desc = item.getAttribute('data-desc');
+      if (nome.includes(busca) || desc.includes(busca)) {
+        item.style.display = 'block';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  // Aplicar classes Bootstrap aos campos
+  document.getElementById('id_nome').classList.add('form-control');
+  document.getElementById('id_descricao').classList.add('form-control');
+
+  // Fechar modal ao clicar fora
+  document.getElementById('modalIcones').addEventListener('click', function (e) {
+    if (e.target === this) {
+      this.style.display = 'none';
+    }
+  });
+</script>
 {% endblock %}

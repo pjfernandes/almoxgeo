@@ -30,10 +30,12 @@ urlpatterns = [
     path('almoxarifados/<int:pk>/toggle/', views.almoxarifado_toggle_ativo, name='almoxarifado_toggle'),
 
     # ── Itens ─────────────────────────────────────────────────────────────────
-    path('itens/',                  views.item_lista,   name='item_lista'),
-    path('itens/novo/',             views.item_criar,   name='item_criar'),
-    path('itens/<int:pk>/',         views.item_detalhe, name='item_detalhe'),
-    path('itens/<int:pk>/editar/',  views.item_editar,  name='item_editar'),
+    path('itens/',                  views.item_lista,    name='item_lista'),
+    path('itens/novo/',             views.item_criar,    name='item_criar'),
+    path('itens/<int:pk>/',         views.item_detalhe,  name='item_detalhe'),
+    path('itens/<int:pk>/editar/',  views.item_editar,   name='item_editar'),
+    path('itens/<int:pk>/qrcode/',  views.item_qrcode,   name='item_qrcode'),
+    path('itens/<int:pk>/etiqueta/',views.item_etiqueta, name='item_etiqueta'),
 
     # ── Movimentações ─────────────────────────────────────────────────────────
     path('movimentacoes/',              views.movimentacao_lista,          name='movimentacao_lista'),
@@ -61,4 +63,7 @@ urlpatterns = [
 
     # ── Relatórios ────────────────────────────────────────────────────────────
     path('relatorios/', views.relatorio_estoque, name='relatorio_estoque'),
+
+    # ── Busca Global ──────────────────────────────────────────────────────────
+    path('busca/', views.busca_global, name='busca_global'),
 ]

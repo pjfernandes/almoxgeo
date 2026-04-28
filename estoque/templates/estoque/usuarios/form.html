@@ -3,13 +3,7 @@
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block breadcrumb %}
-<nav aria-label="breadcrumb" class="mb-3">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{% url 'estoque:dashboard' %}">Dashboard</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'estoque:usuario_lista' %}">Usuários</a></li>
-    <li class="breadcrumb-item active">{{ titulo }}</li>
-  </ol>
-</nav>
+  {% include 'estoque/includes/breadcrumb.html' %}
 {% endblock %}
 
 {% block content %}

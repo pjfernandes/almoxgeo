@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Sistema de Gestão de Estoque{% endblock %} — IGeo/UFF</title>
+  <title>{% block title %}AlmoxGeo{% endblock %} — IGeo/UFF</title>
 
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -65,6 +65,30 @@
       opacity: 0.9;
     }
 
+    /* Botão de busca estilizado */
+    .btn-busca {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.7);
+      transition: all 0.2s;
+      min-width: 220px;
+      text-align: left;
+    }
+
+    .btn-busca:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    .btn-busca kbd {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
     /* ── Sidebar ───────────────────────────────────────────── */
     .sidebar {
       position: fixed;
@@ -117,6 +141,28 @@
       text-align: center;
     }
 
+    /* ── Botão de ação em destaque ─────────────────────────── */
+    .sidebar-nav .nav-link-destaque {
+      background: linear-gradient(135deg, var(--azul-medio) 0%, var(--azul-uff) 100%);
+      color: white !important;
+      font-weight: 600;
+      margin: 0.5rem 0.75rem;
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      box-shadow: 0 2px 8px rgba(0, 51, 102, 0.25);
+      transition: all 0.2s;
+    }
+
+    .sidebar-nav .nav-link-destaque:hover {
+      background: linear-gradient(135deg, #005bb5 0%, var(--azul-medio) 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 51, 102, 0.35);
+    }
+
+    .sidebar-nav .nav-link-destaque i {
+      font-size: 1.15rem;
+}
+
     /* ── Área de conteúdo ──────────────────────────────────── */
     .main-content {
       margin-left: var(--sidebar-w);
@@ -161,6 +207,191 @@
       font-size: 0.7rem;
     }
 
+    /* ── Toast Notifications ──────────────────────────────── */
+    .toast {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border: none;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+      min-width: 300px;
+    }
+
+    .toast-header {
+      border-bottom: none;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .toast-body {
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       MODO ESCURO
+    ══════════════════════════════════════════════════════ */
+    [data-theme="dark"] {
+      --bg-body: #1a1d20;
+      --bg-card: #242729;
+      --bg-sidebar: #2d3235;
+      --bg-topbar: #001a33;
+      --text-primary: #e4e6eb;
+      --text-secondary: #b0b3b8;
+      --border-color: #3a3b3c;
+    }
+
+    [data-theme="dark"] body {
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .topbar {
+      background-color: var(--bg-topbar);
+    }
+
+    [data-theme="dark"] .sidebar {
+      background-color: var(--bg-sidebar);
+      border-right-color: var(--border-color);
+    }
+
+    [data-theme="dark"] .sidebar-nav .nav-link {
+      color: var(--text-secondary);
+    }
+
+    [data-theme="dark"] .sidebar-nav .nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .sidebar-nav .nav-link.active {
+      background-color: rgba(0, 51, 102, 0.3);
+      color: #66b2ff;
+      border-left-color: #66b2ff;
+    }
+
+    /* ── Botão de ação em destaque ─────────────────────────── */
+    .sidebar-nav .nav-link-destaque {
+      background: linear-gradient(135deg, var(--azul-medio) 0%, var(--azul-uff) 100%);
+      color: white !important;
+      font-weight: 600;
+      margin: 0.5rem 0.75rem;
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      box-shadow: 0 2px 8px rgba(0, 51, 102, 0.25);
+      transition: all 0.2s;
+    }
+
+    .sidebar-nav .nav-link-destaque:hover {
+      background: linear-gradient(135deg, #005bb5 0%, var(--azul-medio) 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 51, 102, 0.35);
+    }
+
+    .sidebar-nav .nav-link-destaque i {
+      font-size: 1.15rem;
+    }
+
+    [data-theme="dark"] .card {
+      background-color: var(--bg-card);
+      border-color: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .card-header {
+      background-color: rgba(0, 0, 0, 0.2) !important;
+      border-bottom-color: var(--border-color);
+      color: var(--text-primary) !important;
+    }
+
+    [data-theme="dark"] .table {
+      color: var(--text-primary);
+      --bs-table-bg: transparent;
+      --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+    }
+
+    [data-theme="dark"] .table thead {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    [data-theme="dark"] .table-hover tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .form-control,
+    [data-theme="dark"] .form-select {
+      background-color: #3a3b3c;
+      border-color: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .form-control:focus,
+    [data-theme="dark"] .form-select:focus {
+      background-color: #3a3b3c;
+      border-color: #66b2ff;
+      color: var(--text-primary);
+      box-shadow: 0 0 0 0.25rem rgba(102, 178, 255, 0.25);
+    }
+
+    [data-theme="dark"] .form-control::placeholder {
+      color: var(--text-secondary);
+    }
+
+    [data-theme="dark"] .breadcrumb {
+      background-color: transparent;
+    }
+
+    [data-theme="dark"] .breadcrumb-item a {
+      color: #66b2ff;
+    }
+
+    [data-theme="dark"] .breadcrumb-item.active {
+      color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .text-muted {
+      color: var(--text-secondary) !important;
+    }
+
+    [data-theme="dark"] .main-footer {
+      border-top-color: var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    [data-theme="dark"] .btn-outline-primary {
+      color: #66b2ff;
+      border-color: #66b2ff;
+    }
+
+    [data-theme="dark"] .btn-outline-primary:hover {
+      background-color: #66b2ff;
+      color: #000;
+    }
+
+    [data-theme="dark"] .dropdown-menu {
+      background-color: var(--bg-card);
+      border-color: var(--border-color);
+    }
+
+    [data-theme="dark"] .dropdown-item {
+      color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .dropdown-item:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .dropdown-divider {
+      border-top-color: var(--border-color);
+    }
+
+    [data-theme="dark"] .modal-content {
+      background-color: var(--bg-card);
+      border-color: var(--border-color);
+    }
+
     /* ── Mobile: sidebar vira offcanvas ───────────────────── */
     @media (max-width: 991.98px) {
       .sidebar {
@@ -182,130 +413,149 @@
 
 <body>
 
-  <!-- ════════════════════════════════════════════════════════
+<!-- ════════════════════════════════════════════════════════
      TOPBAR
 ════════════════════════════════════════════════════════ -->
-  <header class="topbar">
-    <!-- Botão para abrir sidebar no mobile -->
-    <button class="btn btn-sm text-white me-2 d-lg-none" id="sidebarToggle" type="button">
-      <i class="bi bi-list fs-5"></i>
-    </button>
+<header class="topbar">
+  <!-- Botão para abrir sidebar no mobile -->
+  <button class="btn btn-sm text-white me-2 d-lg-none" id="sidebarToggle" type="button">
+    <i class="bi bi-list fs-5"></i>
+  </button>
 
-    <!-- Logo e nome do sistema -->
-    <!-- <a href="{% url 'estoque:dashboard' %}" class="brand me-auto">
-      <i class="bi bi-boxes"></i>
-      <span>Sistema de Gestão de Estoque</span>
-      <span class="badge bg-light text-secondary fw-normal ms-1" style="font-size:0.65rem;">IGeo/UFF</span>
-    </a> -->
-    <a href="{% url 'estoque:dashboard' %}" class="brand me-auto d-flex align-items-center">
-      <img src="{% static 'img/logo_igeo.jpg' %}" alt="Logo IGeo"
-        style="height: 32px; width: 32px; border-radius: 50%; object-fit: cover;" class="me-2">
-      <span>Sistema de Gestão de Estoque</span>
-      <span class="badge bg-light text-secondary fw-normal ms-1" style="font-size:0.65rem;">IGeo/UFF</span>
-    </a>
+  <!-- Logo e nome do sistema -->
+  <a href="{% url 'estoque:dashboard' %}" class="brand d-flex align-items-center">
+    <img src="{% static 'img/logo_igeo.jpg' %}" alt="Logo IGeo"
+      style="height: 32px; width: 32px; border-radius: 50%; object-fit: cover;" class="me-2">
+    <span class="d-none d-md-inline">AlmoxGeo</span>
+    <span class="badge bg-light text-secondary fw-normal ms-1 d-none d-lg-inline"
+      style="font-size:0.65rem;">IGeo/UFF</span>
+  </a>
 
-    <!-- Informações do usuário logado -->
-    <div class="d-flex align-items-center gap-3">
-      <div class="user-info d-none d-md-block text-end">
-        <div class="fw-semibold" style="font-size:0.85rem;">
-          {{ request.user.nome_completo|truncatechars:30 }}
-        </div>
-        <div style="font-size:0.75rem; opacity:0.75;">
-          {{ request.user.cargo|default:"Servidor" }}
-        </div>
+  <!-- Botão de busca com modal (logo após o logo, à esquerda) -->
+  <button type="button" class="btn btn-busca btn-sm d-none d-md-flex align-items-center gap-2 ms-3"
+    data-bs-toggle="modal" data-bs-target="#modalBusca">
+    <i class="bi bi-search"></i>
+    <span class="flex-grow-1">Buscar itens...</span>
+    <kbd>Ctrl K</kbd>
+  </button>
+
+  <!-- Espaçador para empurrar info do usuário para a direita -->
+  <div class="ms-auto"></div>
+
+  <!-- Informações do usuário logado -->
+  <div class="d-flex align-items-center gap-2">
+    <div class="user-info d-none d-lg-block text-end">
+      <div class="fw-semibold" style="font-size:0.85rem;">
+        {{ request.user.nome_completo|truncatechars:30 }}
       </div>
-      <div class="dropdown">
-        <button class="btn btn-sm btn-outline-light rounded-circle" data-bs-toggle="dropdown" aria-expanded="false"
-          style="width:36px;height:36px;">
-          <i class="bi bi-person-fill"></i>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li>
-            <span class="dropdown-item-text small text-muted">
-              {{ request.user.matricula }}
-            </span>
-          </li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-          <li>
-            <a class="dropdown-item" href="{% url 'estoque:trocar_senha' %}">
-              <i class="bi bi-key me-2"></i>Trocar senha
-            </a>
-          </li>
-          <li>
-            <!-- Logout via form POST (segurança CSRF) -->
-            <form method="post" action="{% url 'estoque:logout' %}">
-              {% csrf_token %}
-              <button type="submit" class="dropdown-item text-danger">
-                <i class="bi bi-box-arrow-right me-2"></i>Sair
-              </button>
-            </form>
-          </li>
-        </ul>
+      <div style="font-size:0.75rem; opacity:0.75;">
+        {{ request.user.cargo|default:"Servidor" }}
       </div>
     </div>
-  </header>
+
+    <!-- Toggle de modo escuro -->
+    <button id="btnModoEscuro" class="btn btn-sm btn-outline-light rounded-circle" style="width:36px;height:36px;"
+      title="Alternar modo escuro">
+      <i class="bi bi-moon-stars"></i>
+    </button>
+
+    <!-- Dropdown do usuário -->
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-light rounded-circle" data-bs-toggle="dropdown" aria-expanded="false"
+        style="width:36px;height:36px;">
+        <i class="bi bi-person-fill"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+          <span class="dropdown-item-text small text-muted">
+            {{ request.user.matricula }}
+          </span>
+        </li>
+        <li>
+          <hr class="dropdown-divider">
+        </li>
+        <li>
+          <a class="dropdown-item" href="{% url 'estoque:trocar_senha' %}">
+            <i class="bi bi-key me-2"></i>Trocar senha
+          </a>
+        </li>
+        <li>
+          <!-- Logout via form POST (segurança CSRF) -->
+          <form method="post" action="{% url 'estoque:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="dropdown-item text-danger">
+              <i class="bi bi-box-arrow-right me-2"></i>Sair
+            </button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
 
 
-  <!-- ════════════════════════════════════════════════════════
+<!-- ════════════════════════════════════════════════════════
      SIDEBAR
 ════════════════════════════════════════════════════════ -->
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-nav py-2">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-nav py-2">
 
-      <!-- PRINCIPAL -->
-      <div class="nav-section">Principal</div>
-      <a href="{% url 'estoque:dashboard' %}"
-        class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-        <i class="bi bi-speedometer2"></i> Dashboard
-      </a>
+    <!-- PRINCIPAL -->
+    <div class="nav-section">Principal</div>
+    <a href="{% url 'estoque:dashboard' %}"
+      class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
 
-      <!-- ESTOQUE -->
-      <div class="nav-section mt-2">Estoque</div>
-      <a href="{% url 'estoque:item_lista' %}"
-        class="nav-link {% if 'item' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="bi bi-box-seam"></i> Itens
-      </a>
-      <a href="{% url 'estoque:movimentacao_lista' %}"
-        class="nav-link {% if 'movimentacao' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="bi bi-arrow-left-right"></i> Movimentações
-      </a>
-      <a href="{% url 'estoque:almoxarifado_lista' %}"
-        class="nav-link {% if 'almoxarifado' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="bi bi-building"></i> Almoxarifados
-      </a>
+    <!-- CADASTROS -->
+    <div class="nav-section mt-3">Cadastros</div>
+    <a href="{% url 'estoque:categoria_lista' %}"
+      class="nav-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-tags"></i> Categorias
+    </a>
+    <a href="{% url 'estoque:fornecedor_lista' %}"
+      class="nav-link {% if 'fornecedor' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-truck"></i> Fornecedores
+    </a>
+    <a href="{% url 'estoque:almoxarifado_lista' %}"
+      class="nav-link {% if 'almoxarifado' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-building"></i> Almoxarifados
+    </a>
 
-      <!-- CADASTROS -->
-      <div class="nav-section mt-2">Cadastros</div>
-      <a href="{% url 'estoque:categoria_lista' %}"
-        class="nav-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="bi bi-tags"></i> Categorias
-      </a>
-      <a href="{% url 'estoque:fornecedor_lista' %}"
-        class="nav-link {% if 'fornecedor' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="bi bi-truck"></i> Fornecedores
-      </a>
+    <!-- OPERAÇÕES -->
+    <div class="nav-section mt-3">Operações</div>
+    <a href="{% url 'estoque:item_lista' %}"
+      class="nav-link {% if 'item' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-box-seam"></i> Itens
+    </a>
+    <a href="{% url 'estoque:movimentacao_lista' %}"
+      class="nav-link {% if 'movimentacao' in request.resolver_match.url_name and 'criar' not in request.path %}active{% endif %}">
+      <i class="bi bi-arrow-left-right"></i> Movimentações
+    </a>
 
-      <!-- RELATÓRIOS -->
-      <div class="nav-section mt-2">Relatórios</div>
-      <a href="{% url 'estoque:relatorio_estoque' %}"
-        class="nav-link {% if 'relatorio' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="bi bi-file-earmark-bar-graph"></i> Relatórios
-      </a>
+    <!-- Botão de ação em destaque -->
+    <a href="{% url 'estoque:movimentacao_criar' %}" class="nav-link nav-link-destaque">
+      <i class="bi bi-plus-circle-fill"></i> Nova Movimentação
+    </a>
 
-      <!-- ADMIN -->
-      {% if request.user.is_staff %}
-      <div class="nav-section mt-2">Administração</div>
-      <a href="{% url 'estoque:usuario_lista' %}"
-        class="nav-link {% if 'usuario' in request.resolver_match.url_name %}active{% endif %}">
-        <i class="bi bi-people"></i> Usuários
-      </a>
-      {% endif %}
+    <!-- RELATÓRIOS -->
+    <div class="nav-section mt-3">Relatórios</div>
+    <a href="{% url 'estoque:relatorio_estoque' %}"
+      class="nav-link {% if 'relatorio' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-file-earmark-bar-graph"></i> Estoque Atual
+    </a>
 
-    </div><!-- /sidebar-nav -->
-  </nav>
+    <!-- ADMIN -->
+    {% if request.user.is_staff %}
+    <div class="nav-section mt-3">Administração</div>
+    <a href="{% url 'estoque:usuario_lista' %}"
+      class="nav-link {% if 'usuario' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-people"></i> Usuários
+    </a>
+    {% endif %}
 
+  </div>
+</nav>
 
   <!-- ════════════════════════════════════════════════════════
      ÁREA DE CONTEÚDO PRINCIPAL
@@ -313,31 +563,90 @@
   <main class="main-content">
 
     <!-- Breadcrumb -->
-    {% block breadcrumb %}{% endblock %}
+    {% block breadcrumb %}
+    {% include 'estoque/includes/breadcrumb.html' %}
+    {% endblock %}
 
-    <!-- Mensagens de feedback (success, error, warning, info) -->
-    {% if messages %}
-    <div class="mb-3">
+    <!-- Container de toast notifications (substituindo alerts) -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999;">
+      {% if messages %}
       {% for msg in messages %}
-      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2 mb-2" role="alert">
-        <i
-          class="bi bi-{% if msg.tags == 'success' %}check-circle{% elif msg.tags == 'danger' %}exclamation-triangle{% elif msg.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
-        {{ msg }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      <div class="toast show" role="alert" data-bs-autohide="true" data-bs-delay="4000">
+        <div class="toast-header
+                {% if msg.tags == 'success' %}bg-success text-white
+                {% elif msg.tags == 'danger' or msg.tags == 'error' %}bg-danger text-white
+                {% elif msg.tags == 'warning' %}bg-warning text-dark
+                {% else %}bg-info text-white{% endif %}">
+          <i class="bi
+                  {% if msg.tags == 'success' %}bi-check-circle-fill
+                  {% elif msg.tags == 'danger' or msg.tags == 'error' %}bi-exclamation-triangle-fill
+                  {% elif msg.tags == 'warning' %}bi-exclamation-circle-fill
+                  {% else %}bi-info-circle-fill{% endif %} me-2"></i>
+          <strong class="me-auto">
+            {% if msg.tags == 'success' %}Sucesso
+            {% elif msg.tags == 'danger' or msg.tags == 'error' %}Erro
+            {% elif msg.tags == 'warning' %}Atenção
+            {% else %}Informação{% endif %}
+          </strong>
+          <small>agora</small>
+          <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body bg-white text-dark">
+          {{ msg }}
+        </div>
       </div>
       {% endfor %}
+      {% endif %}
     </div>
-    {% endif %}
 
     <!-- Conteúdo da página -->
     {% block content %}{% endblock %}
 
     <!-- Footer -->
     <footer class="main-footer">
-      Sistema de Gestão de Estoque &copy; {% now "Y" %} — Instituto de Geociências / UFF
+      AlmoxGeo &copy; {% now "Y" %} — Instituto de Geociências / UFF
     </footer>
 
   </main>
+
+
+  <!-- ════════════════════════════════════════════════════════
+     MODAL DE BUSCA
+════════════════════════════════════════════════════════ -->
+  <div class="modal fade" id="modalBusca" tabindex="-1" aria-labelledby="modalBuscaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-body p-0">
+          <form method="get" action="{% url 'estoque:busca_global' %}">
+            <div class="input-group input-group-lg border-0">
+              <span class="input-group-text bg-transparent border-0 ps-4">
+                <i class="bi bi-search text-muted"></i>
+              </span>
+              <input type="text" name="q" id="inputBuscaModal" class="form-control border-0 shadow-none"
+                placeholder="Buscar por nome, código, lote, patrimônio..." autocomplete="off" autofocus
+                style="font-size: 1.1rem; padding: 1.2rem 0.5rem;">
+              <button type="submit" class="btn btn-link text-decoration-none px-4">
+                <i class="bi bi-arrow-return-left me-1"></i>
+                <span class="small">Enter</span>
+              </button>
+            </div>
+          </form>
+          <div class="px-4 pb-3 pt-2 bg-light border-top">
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                <i class="bi bi-lightbulb me-1"></i>
+                Pressione <kbd class="bg-white border px-1 py-0">Ctrl</kbd> + <kbd
+                  class="bg-white border px-1 py-0">K</kbd> para abrir a busca
+              </small>
+              <small class="text-muted">
+                <kbd class="bg-white border px-1 py-0">Esc</kbd> para fechar
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
   <!-- Overlay para fechar sidebar no mobile -->
@@ -371,6 +680,69 @@
       link.addEventListener('click', () => {
         if (window.innerWidth < 992) fecharSidebar();
       });
+    });
+
+    // ── Auto-hide toasts ───────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      const toasts = document.querySelectorAll('.toast');
+      toasts.forEach(toast => {
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+      });
+    });
+
+    // ── Modo Escuro ────────────────────────────────────────
+    const btnModoEscuro = document.getElementById('btnModoEscuro');
+    const htmlElement = document.documentElement;
+
+    // Carregar preferência salva
+    const temaAtual = localStorage.getItem('tema') || 'light';
+    htmlElement.setAttribute('data-theme', temaAtual);
+    atualizarIcone(temaAtual);
+
+    // Toggle ao clicar
+    btnModoEscuro.addEventListener('click', function () {
+      const novoTema = htmlElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      htmlElement.setAttribute('data-theme', novoTema);
+      localStorage.setItem('tema', novoTema);
+      atualizarIcone(novoTema);
+    });
+
+    function atualizarIcone(tema) {
+      const icone = btnModoEscuro.querySelector('i');
+      if (tema === 'dark') {
+        icone.className = 'bi bi-sun';
+        btnModoEscuro.title = 'Modo claro';
+      } else {
+        icone.className = 'bi bi-moon-stars';
+        btnModoEscuro.title = 'Modo escuro';
+      }
+    }
+
+    // ── Atalho de teclado Ctrl+K para busca ───────────────
+    document.addEventListener('keydown', function (e) {
+      // Ctrl+K ou Cmd+K (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const modalBusca = new bootstrap.Modal(document.getElementById('modalBusca'));
+        modalBusca.show();
+      }
+    });
+
+    // Focar no input quando o modal abrir
+    document.getElementById('modalBusca').addEventListener('shown.bs.modal', function () {
+      document.getElementById('inputBuscaModal').focus();
+    });
+
+    // Fechar modal com ESC (já é comportamento padrão do Bootstrap, mas garantindo)
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        const modalElement = document.getElementById('modalBusca');
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.hide();
+        }
+      }
     });
   </script>
 

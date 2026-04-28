@@ -121,10 +121,12 @@ class ItemForm(forms.ModelForm):
             'nome', 'descricao', 'categoria', 'almoxarifado',
             'unidade_medida', 'quantidade_atual', 'quantidade_minima',
             'localizacao_fisica',
-            # Novos campos
             'lote', 'data_fabricacao', 'data_validade',
-            'codigo_patrimonio', 'valor', 'anexo'
+            'codigo_patrimonio', 'valor',
+            'fornecedor',
+            'anexo'
         ]
+
         widgets = {
             'descricao': forms.Textarea(attrs={'rows': 3}),
             'localizacao_fisica': forms.TextInput(attrs={'placeholder': 'Ex: Prateleira B, Coluna 3'}),
@@ -169,8 +171,9 @@ class ItemForm(forms.ModelForm):
             # Patrimônio e valor
             HTML('<hr class="my-3"><h6 class="text-muted mb-3">Controle Patrimonial</h6>'),
             Row(
-                Column('codigo_patrimonio', css_class='col-md-6'),
-                Column('valor',             css_class='col-md-6'),
+                Column('codigo_patrimonio', css_class='col-md-4'),
+                Column('valor',             css_class='col-md-4'),
+                Column('fornecedor',        css_class='col-md-4'),
             ),
 
             # Anexo
@@ -190,8 +193,8 @@ class MovimentacaoForm(forms.ModelForm):
         model  = Movimentacao
         fields = [
             'item', 'tipo', 'quantidade',
-            'solicitante_nome', 'solicitante_departamento',  # novos campos
-            'almoxarifado_destino', 'fornecedor', 'observacao'
+            'solicitante_nome', 'solicitante_departamento',
+            'almoxarifado_destino', 'observacao'
         ]
         widgets = {
             'observacao': forms.Textarea(attrs={'rows': 2}),

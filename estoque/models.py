@@ -82,11 +82,12 @@ class Categoria(models.Model):
         verbose_name='Descrição'
     )
     icone = models.CharField(
-        max_length=50,
-        default='box-seam',
-        verbose_name='Ícone Bootstrap Icons',
-        help_text='Nome do ícone Bootstrap Icons (ex: box-seam, pencil, printer)'
-    )
+            max_length=50,
+            default='box-seam',  # ← ícone padrão
+            blank=True,          # ← não obrigatório
+            verbose_name='Ícone Bootstrap Icons',
+            help_text='Nome do ícone Bootstrap Icons'
+        )
 
     class Meta:
         verbose_name = 'Categoria'
@@ -196,6 +197,7 @@ class Item(models.Model):
         ('kg', 'Quilograma'),
         ('m',  'Metro'),
         ('pc', 'Pacote'),
+        ('ou', 'Outros'),
     ]
 
     nome = models.CharField(
@@ -283,6 +285,16 @@ class Item(models.Model):
         blank=True,
         verbose_name='Valor unitário (R$)',
         help_text='Valor de aquisição por unidade'
+    )
+
+    # Fornecedor padrão do item
+    fornecedor = models.ForeignKey(
+        'Fornecedor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='itens',
+        verbose_name='Fornecedor padrão'
     )
 
     # Documentação
@@ -445,15 +457,15 @@ class Movimentacao(models.Model):
         verbose_name='Almoxarifado de destino',
         help_text='Usado apenas em transferências'
     )
-    fornecedor = models.ForeignKey(
-        Fornecedor,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='movimentacoes',
-        verbose_name='Fornecedor',
-        help_text='Usado apenas em entradas'
-    )
+    # fornecedor = models.ForeignKey(
+    #     Fornecedor,
+    #     on_delete=models.PROTECT,
+    #     null=True,
+    #     blank=True,
+    #     related_name='movimentacoes',
+    #     verbose_name='Fornecedor',
+    #     help_text='Usado apenas em entradas'
+    # )
     observacao = models.TextField(
         blank=True,
         verbose_name='Observação'
@@ -504,6 +516,7 @@ class Movimentacao(models.Model):
                     f'{self.item.get_unidade_medida_display()}'
                 )
 
+
     def save(self, *args, **kwargs):
         """
         Ao salvar uma movimentação:
@@ -535,21 +548,31 @@ class Movimentacao(models.Model):
                 # Debitar do item de origem
                 nova_qtd = self.item.quantidade_atual - self.quantidade
 
-                # Creditar no item equivalente no almoxarifado de destino
-                # Busca item com mesmo nome no almoxarifado destino
-                try:
-                    item_destino = Item.objects.get(
-                        nome=self.item.nome,
-                        almoxarifado=self.almoxarifado_destino
-                    )
-                    item_destino.quantidade_atual += self.quantidade
-                    item_destino.save()
-                except Item.DoesNotExist:
-                    raise ValidationError(
-                        f'Não existe o item "{self.item.nome}" no almoxarifado '
-                        f'"{self.almoxarifado_destino}". '
-                        f'Cadastre o item no destino antes de transferir.'
-                    )
+                # Buscar ou criar automaticamente o item no almoxarifado de destino
+                item_destino, criado = Item.objects.get_or_create(
+                    nome=self.item.nome,
+                    almoxarifado=self.almoxarifado_destino,
+                    defaults={
+                        'descricao': self.item.descricao,
+                        'categoria': self.item.categoria,
+                        'unidade_medida': self.item.unidade_medida,
+                        'quantidade_atual': 0,
+                        'quantidade_minima': self.item.quantidade_minima,
+                        'localizacao_fisica': '',
+                        # Copiar rastreabilidade
+                        'lote': self.item.lote,
+                        'data_fabricacao': self.item.data_fabricacao,
+                        'data_validade': self.item.data_validade,
+                        # Não duplicar patrimônio (cada item tem seu próprio tombamento)
+                        'codigo_patrimonio': '',
+                        'valor': self.item.valor,
+                        'fornecedor': self.item.fornecedor,
+                    }
+                )
+
+                # Creditar no item de destino
+                item_destino.quantidade_atual += self.quantidade
+                item_destino.save()
 
             else:
                 nova_qtd = self.item.quantidade_atual

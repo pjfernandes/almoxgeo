@@ -159,6 +159,35 @@ def dashboard(request):
         '#66b2ff','#99ccff','#cce5ff','#e8f0fe',
     ]
 
+    top_itens = (
+        Movimentacao.objects
+        .filter(data_movimentacao__gte=trinta_dias_atras)
+        .values('item__nome', 'item__pk')
+        .annotate(total_movimentacoes=Count('id'))
+        .order_by('-total_movimentacoes')[:5]
+    )
+
+    # Valor total do estoque
+    from django.db.models import Sum
+    valor_total = (
+        Item.objects
+        .filter(valor__isnull=False)
+        .aggregate(
+            total=Sum(models.F('quantidade_atual') * models.F('valor'))
+        )['total'] or 0
+    )
+
+    # Distribuição de movimentações por tipo (último mês)
+    movs_por_tipo = list(
+        Movimentacao.objects
+        .filter(data_movimentacao__gte=trinta_dias_atras)
+        .values('tipo')
+        .annotate(qtd=Count('id'))
+    )
+
+    tipo_labels = [m['tipo'] for m in movs_por_tipo]
+    tipo_data = [m['qtd'] for m in movs_por_tipo]
+
     contexto = {
         'total_almoxarifados':   total_almoxarifados,
         'total_itens':           total_itens,
@@ -180,6 +209,10 @@ def dashboard(request):
         'itens_vencidos': itens_vencidos[:5],
         'total_validade_critica': itens_validade_critica.count(),
         'total_vencidos': itens_vencidos.count(),
+        'top_itens': top_itens,
+        'valor_total_estoque': valor_total,
+        'tipo_labels': json.dumps(tipo_labels),
+        'tipo_data': json.dumps(tipo_data),
     }
 
     return render(request, 'estoque/dashboard.html', contexto)
@@ -385,31 +418,50 @@ def item_lista(request):
 
 @login_required
 def item_detalhe(request, pk):
-    """Detalhe do item com histórico de movimentações."""
-    item = get_object_or_404(Item, pk=pk)
-    movimentacoes = item.movimentacoes.select_related(
-        'responsavel', 'almoxarifado_destino', 'fornecedor'
-    ).order_by('-data_movimentacao')
+    item = get_object_or_404(
+        Item.objects.select_related('categoria', 'almoxarifado', 'fornecedor'),
+        pk=pk
+    )
+
+    # Buscar histórico de movimentações deste item
+    movimentacoes = Movimentacao.objects.filter(
+        item=item
+    ).select_related(
+        'responsavel',
+        'almoxarifado',
+        'almoxarifado_destino',
+        'item__fornecedor'
+    ).order_by('-data_movimentacao')[:50]
+
+    # Calcular valor total do estoque
+    valor_total_estoque = None
+    if item.valor:
+        valor_total_estoque = item.quantidade_atual * item.valor
+
     return render(request, 'estoque/itens/detalhe.html', {
         'item': item,
         'movimentacoes': movimentacoes,
+        'valor_total_estoque': valor_total_estoque,
     })
-
 
 @login_required
 def item_criar(request):
-    """Cria um novo item no estoque."""
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Item cadastrado com sucesso!')
-            return redirect('estoque:item_lista')
+            item = form.save()
+            messages.success(
+                request,
+                f'Item "{item.nome}" cadastrado com sucesso! Código: {item.codigo_interno}'
+            )
+            return redirect('estoque:item_detalhe', pk=item.pk)  # ← MODIFICADO: vai pro detalhe
     else:
         form = ItemForm()
-    return render(request, 'estoque/itens/form.html',
-                  {'form': form, 'titulo': 'Novo Item'})
 
+    return render(request, 'estoque/itens/form.html', {
+        'form': form,
+        'titulo': 'Cadastrar Novo Item',
+    })
 
 @login_required
 def item_editar(request, pk):
@@ -703,6 +755,48 @@ def usuario_editar(request, pk):
     return render(request, 'estoque/usuarios/form.html',
                   {'form': form, 'titulo': 'Editar Usuário', 'objeto': usuario})
 
+from django.http import HttpResponse
+from io import BytesIO
+import qrcode
+from django.urls import reverse
+
+
+@login_required
+def item_qrcode(request, pk):
+    """Gera QR Code do item para impressão de etiqueta."""
+    item = get_object_or_404(Item, pk=pk)
+
+    # URL absoluta do item
+    url = request.build_absolute_uri(
+        reverse('estoque:item_detalhe', args=[item.pk])
+    )
+
+    # Gerar QR Code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=2,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Retornar como PNG
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
+
+    return HttpResponse(buffer.getvalue(), content_type='image/png')
+
+
+@login_required
+def item_etiqueta(request, pk):
+    """Página para impressão de etiqueta com QR Code."""
+    item = get_object_or_404(Item, pk=pk)
+    return render(request, 'estoque/itens/etiqueta.html', {'item': item})
+
 
 @login_required
 @user_passes_test(is_admin)
@@ -840,3 +934,29 @@ def _exportar_estoque_pdf(almoxarifados):
 
     doc.build(elementos)
     return response
+
+@login_required
+def busca_global(request):
+    """Busca global de itens por nome ou código."""
+    query = request.GET.get('q', '').strip()
+
+    if not query:
+        return redirect('estoque:dashboard')
+
+    # Buscar itens
+    itens = Item.objects.filter(
+        Q(nome__icontains=query) |
+        Q(codigo_interno__icontains=query) |
+        Q(descricao__icontains=query) |
+        Q(lote__icontains=query) |
+        Q(codigo_patrimonio__icontains=query)
+    ).select_related('categoria', 'almoxarifado')[:20]
+
+    # Se for apenas 1 resultado, redirecionar direto
+    if itens.count() == 1:
+        return redirect('estoque:item_detalhe', pk=itens[0].pk)
+
+    return render(request, 'estoque/busca.html', {
+        'query': query,
+        'itens': itens,
+    })
