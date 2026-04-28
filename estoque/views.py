@@ -963,6 +963,7 @@ def busca_global(request):
         'itens': itens,
     })
 
+from django.http import JsonResponse
 @login_required
 def limpar_flag_item(request):
     """Remove a flag de item recém-criado da sessão"""
