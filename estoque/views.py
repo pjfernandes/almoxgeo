@@ -454,7 +454,9 @@ def item_criar(request):
                 request,
                 f'Item "{item.nome}" cadastrado com sucesso! Código: {item.codigo_interno}'
             )
-            return redirect('estoque:item_detalhe', pk=item.pk)  # ← MODIFICADO: vai pro detalhe
+            # Flag para mostrar sugestão de entrada
+            request.session['item_recem_criado'] = item.pk
+            return redirect('estoque:item_detalhe', pk=item.pk)
     else:
         form = ItemForm()
 
@@ -960,3 +962,10 @@ def busca_global(request):
         'query': query,
         'itens': itens,
     })
+
+@login_required
+def limpar_flag_item(request):
+    """Remove a flag de item recém-criado da sessão"""
+    if 'item_recem_criado' in request.session:
+        del request.session['item_recem_criado']
+    return JsonResponse({'status': 'ok'})

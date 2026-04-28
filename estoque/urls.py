@@ -66,4 +66,6 @@ urlpatterns = [
 
     # ── Busca Global ──────────────────────────────────────────────────────────
     path('busca/', views.busca_global, name='busca_global'),
+
+    path('limpar-flag-item/', views.limpar_flag_item, name='limpar_flag_item'),
 ]
