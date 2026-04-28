@@ -1,46 +1,121 @@
 {% extends 'estoque/base.html' %}
 {% load crispy_forms_tags %}
+
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block breadcrumb %}
-  {% include 'estoque/includes/breadcrumb.html' %}
+{% include 'estoque/includes/breadcrumb.html' %}
 {% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-8">
     <div class="card shadow-sm">
-      <div class="card-header bg-white py-3">
-        <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>{{ titulo }}</h5>
+      <div class="card-header bg-primary text-white py-3">
+        <h5 class="mb-0">
+          <i class="bi bi-arrow-left-right me-2"></i>{{ titulo }}
+        </h5>
       </div>
       <div class="card-body">
-        <!-- Dica sobre campos condicionais -->
-        <div class="alert alert-info py-2 mb-3 small">
-          <i class="bi bi-info-circle me-1"></i>
-          <strong>Transferência:</strong> informe o almoxarifado de destino.<br>
-          <strong>Entrada:</strong> informe o fornecedor (opcional).<br>
-          <strong>Ajuste:</strong> o campo "Quantidade" será o novo valor absoluto do estoque.
+
+        <!-- Card de ajuda rápida -->
+        <div class="alert alert-info d-flex align-items-start mb-4" role="alert">
+          <i class="bi bi-info-circle-fill me-2 fs-5 mt-1"></i>
+          <div class="small">
+            <strong>Tipos de movimentação:</strong>
+            <ul class="mb-0 mt-2">
+              <li><strong class="text-success">Entrada:</strong> Chegou material novo no almoxarifado</li>
+              <li><strong class="text-danger">Saída:</strong> Alguém retirou/consumiu material</li>
+              <li><strong class="text-warning">Ajuste:</strong> Corrigir estoque após inventário físico</li>
+              <li><strong class="text-info">Transferência:</strong> Mover entre almoxarifados</li>
+            </ul>
+            <small class="text-muted mt-2 d-block">
+              <i class="bi bi-lightbulb me-1"></i>
+              <strong>Dica:</strong> Para AJUSTE, informe a quantidade total desejada (não a diferença).
+            </small>
+          </div>
         </div>
+
         {% crispy form %}
       </div>
     </div>
   </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-  // Mostrar/ocultar campos condicionais conforme o tipo de movimentação
-  const tipoSelect = document.getElementById('id_tipo');
-  const campoDestino = document.getElementById('id_almoxarifado_destino').closest('.col-md-6');
-  const campoFornecedor = document.getElementById('id_fornecedor').closest('.col-md-6');
+  // ══════════════════════════════════════════════════════════════════
+  // CONTROLE DINÂMICO DE CAMPOS BASEADO NO TIPO DE MOVIMENTAÇÃO
+  // ══════════════════════════════════════════════════════════════════
 
-  function atualizarCampos() {
-    const tipo = tipoSelect.value;
-    campoDestino.style.display = tipo === 'TRANSFERENCIA' ? 'block' : 'none';
-    campoFornecedor.style.display = tipo === 'ENTRADA' ? 'block' : 'none';
-  }
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectTipo = document.querySelector('#id_tipo');
+    const camposSaida = document.querySelector('#camposSaida');
+    const camposTransferencia = document.querySelector('#camposTransferencia');
+    const fieldSolicitanteNome = document.querySelector('#id_solicitante_nome');
+    const fieldSolicitanteDepartamento = document.querySelector('#id_solicitante_departamento');
+    const fieldAlmoxarifadoDestino = document.querySelector('#id_almoxarifado_destino');
 
-  tipoSelect.addEventListener('change', atualizarCampos);
-  // Executar ao carregar
-  atualizarCampos();
+    if (!selectTipo) return; // Proteção se elementos não existirem
+
+    function atualizarCampos() {
+      const tipo = selectTipo.value;
+
+      // Esconder tudo primeiro
+      if (camposSaida) camposSaida.style.display = 'none';
+      if (camposTransferencia) camposTransferencia.style.display = 'none';
+
+      // Resetar obrigatoriedade
+      if (fieldSolicitanteNome) fieldSolicitanteNome.required = false;
+      if (fieldAlmoxarifadoDestino) fieldAlmoxarifadoDestino.required = false;
+
+      // Mostrar campos relevantes e marcar como obrigatórios
+      if (tipo === 'SAIDA') {
+        if (camposSaida) {
+          camposSaida.style.display = 'block';
+          if (fieldSolicitanteNome) fieldSolicitanteNome.required = true;
+        }
+      } else if (tipo === 'TRANSFERENCIA') {
+        if (camposTransferencia) {
+          camposTransferencia.style.display = 'block';
+          if (fieldAlmoxarifadoDestino) fieldAlmoxarifadoDestino.required = true;
+        }
+      }
+
+      // Destaque visual no campo tipo (borda colorida)
+      selectTipo.classList.remove('border-success', 'border-danger', 'border-warning', 'border-info', 'border-3');
+
+      if (tipo === 'ENTRADA') {
+        selectTipo.classList.add('border-success', 'border-3');
+      } else if (tipo === 'SAIDA') {
+        selectTipo.classList.add('border-danger', 'border-3');
+      } else if (tipo === 'AJUSTE') {
+        selectTipo.classList.add('border-warning', 'border-3');
+      } else if (tipo === 'TRANSFERENCIA') {
+        selectTipo.classList.add('border-info', 'border-3');
+      }
+    }
+
+    // Executar ao carregar a página
+    atualizarCampos();
+
+    // Executar sempre que o tipo mudar
+    selectTipo.addEventListener('change', atualizarCampos);
+
+    // ──────────────────────────────────────────────────────────────
+    // LOADING SPINNER nos botões de submit
+    // ──────────────────────────────────────────────────────────────
+    const form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+        }
+      });
+    }
+  });
 </script>
 {% endblock %}

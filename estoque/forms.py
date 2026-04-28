@@ -190,73 +190,150 @@ class ItemForm(forms.ModelForm):
 
 class MovimentacaoForm(forms.ModelForm):
     class Meta:
-        model  = Movimentacao
+        model = Movimentacao
         fields = [
-            'item', 'tipo', 'quantidade',
-            'solicitante_nome', 'solicitante_departamento',
-            'almoxarifado_destino', 'observacao'
+            'tipo',
+            'item',
+            'almoxarifado',
+            'quantidade',
+            'almoxarifado_destino',
+            'solicitante_nome',
+            'solicitante_departamento',
+            'observacao',
         ]
         widgets = {
-            'observacao': forms.Textarea(attrs={'rows': 2}),
-            'solicitante_departamento': forms.Select(choices=[
-                ('', '— Selecione —'),
-                ('Geologia', 'Geologia'),
-                ('Análise Geoambiental', 'Análise Geoambiental'),
-                ('Geografia', 'Geografia'),
-                ('Administração', 'Administração'),
-                ('Laboratório', 'Laboratório'),
-                ('Outro', 'Outro'),
-            ]),
+            'observacao': forms.Textarea(attrs={'rows': 3}),
+        }
+        help_texts = {
+            'quantidade': 'Para AJUSTE, informe a quantidade total desejada (não a diferença)',
         }
 
     def __init__(self, *args, **kwargs):
         item_pk = kwargs.pop('item_pk', None)
         super().__init__(*args, **kwargs)
 
+        # Se vier de um item específico, pré-selecionar
         if item_pk:
-            self.fields['item'].initial = item_pk
+            try:
+                item = Item.objects.get(pk=item_pk)
+                self.fields['item'].initial = item
+                self.fields['almoxarifado'].initial = item.almoxarifado
+            except Item.DoesNotExist:
+                pass
 
-        self.fields['almoxarifado_destino'].queryset = Almoxarifado.objects.filter(ativo=True)
-        self.fields['almoxarifado_destino'].required  = False
-        self.fields['fornecedor'].required = False
-
+        # Configurar layout crispy
         self.helper = FormHelper()
+        self.helper.form_method = 'post'
         self.helper.layout = Layout(
-            Row(
-                Column('item',       css_class='col-md-8'),
-                Column('tipo',       css_class='col-md-4'),
-            ),
-            Row(
-                Column('quantidade', css_class='col-md-4'),
-                Column('solicitante_nome', css_class='col-md-8'),
-            ),
-            Row(
-                Column('solicitante_departamento', css_class='col-md-6'),
-                Column('almoxarifado_destino',     css_class='col-md-6'),
-            ),
-            'fornecedor',
-            'observacao',
             Div(
-                Submit('submit', 'Registrar Movimentação', css_class='btn btn-primary'),
-                HTML('<a href="{% url \'estoque:movimentacao_lista\' %}" class="btn btn-secondary ms-2">Cancelar</a>'),
-                css_class='d-flex mt-3'
+                # Seção: Tipo de Movimentação (destaque visual)
+                Div(
+                    HTML('<h5 class="border-bottom pb-2 mb-3"><i class="bi bi-arrow-left-right me-2"></i>Tipo de Movimentação</h5>'),
+                    Field('tipo', css_class='form-select-lg', wrapper_class='mb-4'),
+                    css_class='mb-4'
+                ),
+
+                # Seção: Item e Almoxarifado
+                Div(
+                    HTML('<h6 class="text-muted mb-3"><i class="bi bi-box-seam me-2"></i>Item e Localização</h6>'),
+                    Row(
+                        Column('item', css_class='col-md-8'),
+                        Column('almoxarifado', css_class='col-md-4'),
+                    ),
+                    css_class='mb-4'
+                ),
+
+                # Quantidade
+                Div(
+                    HTML('<h6 class="text-muted mb-3"><i class="bi bi-123 me-2"></i>Quantidade</h6>'),
+                    Field('quantidade', css_class='form-control-lg'),
+                    css_class='mb-4'
+                ),
+
+                # Campos condicionais (controlados por JavaScript)
+                # SAÍDA: Solicitante
+                Div(
+                    HTML('<h6 class="text-muted mb-3"><i class="bi bi-person me-2"></i>Quem está retirando?</h6>'),
+                    Row(
+                        Column('solicitante_nome', css_class='col-md-6'),
+                        Column('solicitante_departamento', css_class='col-md-6'),
+                    ),
+                    css_class='mb-4 campo-saida',
+                    css_id='camposSaida',
+                    style='display:none;'
+                ),
+
+                # TRANSFERÊNCIA: Destino
+                Div(
+                    HTML('<h6 class="text-muted mb-3"><i class="bi bi-arrow-right-circle me-2"></i>Para onde transferir?</h6>'),
+                    Field('almoxarifado_destino'),
+                    css_class='mb-4 campo-transferencia',
+                    css_id='camposTransferencia',
+                    style='display:none;'
+                ),
+
+                # Observações (sempre visível)
+                Div(
+                    HTML('<h6 class="text-muted mb-3"><i class="bi bi-chat-left-text me-2"></i>Observações (opcional)</h6>'),
+                    Field('observacao', placeholder='Ex: Material para aula prática de dia 15/05'),
+                    css_class='mb-4'
+                ),
+
+                # Botões
+                Div(
+                    Submit('submit', 'Registrar Movimentação', css_class='btn btn-primary btn-lg'),
+                    HTML('<a href="{% url \'estoque:movimentacao_lista\' %}" class="btn btn-outline-secondary btn-lg ms-2">Cancelar</a>'),
+                    css_class='d-flex gap-2'
+                ),
             )
         )
 
+        # Placeholders e labels melhorados
+        self.fields['tipo'].label = 'Selecione o tipo de movimentação'
+        self.fields['item'].label = 'Item'
+        self.fields['item'].help_text = 'Digite para buscar'
+        self.fields['almoxarifado'].label = 'Almoxarifado de origem'
+        self.fields['quantidade'].label = 'Quantidade'
+        self.fields['almoxarifado_destino'].label = 'Almoxarifado de destino'
+        self.fields['solicitante_nome'].label = 'Nome completo'
+        self.fields['solicitante_nome'].required = False
+        self.fields['solicitante_departamento'].label = 'Departamento/Setor'
+        self.fields['solicitante_departamento'].required = False
+        self.fields['observacao'].label = 'Observações'
+        self.fields['observacao'].required = False
+
+        # Placeholders
+        self.fields['tipo'].widget.attrs['placeholder'] = 'Escolha: Entrada, Saída, Ajuste ou Transferência'
+        self.fields['solicitante_nome'].widget.attrs['placeholder'] = 'Ex: João Silva'
+        self.fields['solicitante_departamento'].widget.attrs['placeholder'] = 'Ex: Laboratório de Geoquímica'
+        self.fields['quantidade'].widget.attrs['placeholder'] = 'Ex: 10'
+
     def clean(self):
-        cleaned = super().clean()
-        if cleaned.get('item') and cleaned.get('tipo') and cleaned.get('quantidade'):
-            obj = Movimentacao(
-                item=cleaned['item'],
-                tipo=cleaned['tipo'],
-                quantidade=cleaned['quantidade'],
-                almoxarifado_destino=cleaned.get('almoxarifado_destino'),
-            )
-            try:
-                obj.clean()
-            except Exception as e:
-                raise forms.ValidationError(str(e))
-        return cleaned
+        cleaned_data = super().clean()
+        tipo = cleaned_data.get('tipo')
+        quantidade = cleaned_data.get('quantidade')
+        item = cleaned_data.get('item')
+        almoxarifado_destino = cleaned_data.get('almoxarifado_destino')
+        almoxarifado = cleaned_data.get('almoxarifado')
+
+        # Validações por tipo
+        if tipo == 'SAIDA':
+            if item and quantidade and item.quantidade_atual < quantidade:
+                raise forms.ValidationError(
+                    f'Estoque insuficiente! Disponível: {item.quantidade_atual} {item.get_unidade_medida_display()}'
+                )
+
+        if tipo == 'TRANSFERENCIA':
+            if not almoxarifado_destino:
+                raise forms.ValidationError('Para transferência, selecione o almoxarifado de destino.')
+            if almoxarifado_destino == almoxarifado:
+                raise forms.ValidationError('Almoxarifado de destino deve ser diferente da origem.')
+            if item and quantidade and item.quantidade_atual < quantidade:
+                raise forms.ValidationError(
+                    f'Estoque insuficiente para transferência! Disponível: {item.quantidade_atual} {item.get_unidade_medida_display()}'
+                )
+
+        return cleaned_data
 
 from django.contrib.auth.forms import UserCreationForm
 
