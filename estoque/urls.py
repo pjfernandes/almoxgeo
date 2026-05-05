@@ -28,6 +28,7 @@ urlpatterns = [
     path('almoxarifados/novo/',          views.almoxarifado_criar,         name='almoxarifado_criar'),
     path('almoxarifados/<int:pk>/editar/', views.almoxarifado_editar,      name='almoxarifado_editar'),
     path('almoxarifados/<int:pk>/toggle/', views.almoxarifado_toggle_ativo, name='almoxarifado_toggle'),
+    path('almoxarifados/<int:pk>/', views.almoxarifado_detalhe, name='almoxarifado_detalhe'),
 
     # ── Itens ─────────────────────────────────────────────────────────────────
     path('itens/',                  views.item_lista,    name='item_lista'),
@@ -42,6 +43,7 @@ urlpatterns = [
     path('movimentacoes/nova/',         views.movimentacao_criar,          name='movimentacao_criar'),
     path('movimentacoes/exportar/csv/', views.movimentacao_exportar_csv,   name='movimentacao_exportar_csv'),
     path('movimentacoes/exportar/pdf/', views.movimentacao_exportar_pdf,   name='movimentacao_exportar_pdf'),
+    path('movimentacoes/<int:pk>/', views.movimentacao_detalhe, name='movimentacao_detalhe'),
 
     # ── Categorias ────────────────────────────────────────────────────────────
     path('categorias/',                  views.categoria_lista,   name='categoria_lista'),

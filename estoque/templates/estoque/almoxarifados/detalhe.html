@@ -1,0 +1,312 @@
+{% extends 'estoque/base.html' %}
+
+{% block title %}{{ almoxarifado.nome }}{% endblock %}
+
+{% block breadcrumb %}
+{% include 'estoque/includes/breadcrumb.html' %}
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Cabeçalho ──────────────────────────────────────────── -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h4 class="mb-1">
+      <i class="bi bi-building text-primary"></i> {{ almoxarifado.nome }}
+    </h4>
+    <p class="text-muted mb-0">
+      <small>
+        <i class="bi bi-geo-alt me-1"></i>{{ almoxarifado.localizacao }}
+        {% if almoxarifado.responsavel %}
+        &nbsp;•&nbsp;
+        <i class="bi bi-person me-1"></i>{{ almoxarifado.responsavel.nome_completo }}
+        {% endif %}
+      </small>
+    </p>
+  </div>
+
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'estoque:item_criar' %}?almoxarifado={{ almoxarifado.pk }}" class="btn btn-success btn-sm">
+      <i class="bi bi-plus-circle"></i> Adicionar Item
+    </a>
+    <a href="{% url 'estoque:almoxarifado_editar' almoxarifado.pk %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-pencil"></i> Editar
+    </a>
+    <a href="{% url 'estoque:almoxarifado_lista' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-list"></i> Voltar à Lista
+    </a>
+  </div>
+</div>
+
+
+<!-- ── Cards de Estatísticas ──────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <div class="col-md-3 col-6">
+    <div class="card card-stat h-100">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="card-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold text-primary">{{ total_itens }}</div>
+          <div class="text-muted small">Tipos de itens</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="card card-stat h-100">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="card-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-stack"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold text-success">{{ total_unidades|floatformat:0 }}</div>
+          <div class="text-muted small">Unidades em estoque</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="card card-stat h-100">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="card-icon bg-info bg-opacity-10 text-info">
+          <i class="bi bi-cash-stack"></i>
+        </div>
+        <div>
+          <div class="fs-4 fw-bold text-info">R$ {{ valor_total|floatformat:2 }}</div>
+          <div class="text-muted small">Valor total</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="card card-stat h-100 {% if itens_baixo_estoque %}border-danger{% endif %}">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div
+          class="card-icon {% if itens_baixo_estoque %}bg-danger text-white{% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <div>
+          <div class="fs-2 fw-bold {% if itens_baixo_estoque %}text-danger{% endif %}">
+            {{ itens_baixo_estoque|length }}
+          </div>
+          <div class="text-muted small">Estoque baixo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ── Alertas ──────────────────────────────────────────── -->
+{% if itens_baixo_estoque %}
+<div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+  <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+  <div>
+    <strong>{{ itens_baixo_estoque|length }} itens</strong> com estoque abaixo do mínimo neste almoxarifado.
+  </div>
+</div>
+{% endif %}
+
+{% if itens_vencidos %}
+<div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+  <i class="bi bi-calendar-x-fill me-2 fs-5"></i>
+  <div>
+    <strong>{{ itens_vencidos|length }} itens</strong> vencidos neste almoxarifado.
+  </div>
+</div>
+{% endif %}
+
+{% if itens_vencendo %}
+<div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+  <i class="bi bi-clock-history me-2 fs-5"></i>
+  <div>
+    <strong>{{ itens_vencendo|length }} itens</strong> vencerão nos próximos 30 dias.
+  </div>
+</div>
+{% endif %}
+
+
+<!-- ── Distribuição por Categoria ──────────────────────── -->
+{% if itens_por_categoria %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white py-3">
+    <h6 class="mb-0">
+      <i class="bi bi-pie-chart me-2 text-primary"></i>
+      Distribuição por Categoria
+    </h6>
+  </div>
+  <div class="card-body">
+    <div class="row g-2">
+      {% for cat in itens_por_categoria %}
+      <div class="col-md-3 col-6">
+        <div class="border rounded p-2 d-flex align-items-center gap-2">
+          <i class="bi bi-{{ cat.categoria__icone|default:'box-seam' }} fs-4 text-primary"></i>
+          <div class="flex-grow-1">
+            <div class="fw-semibold small">{{ cat.categoria__nome }}</div>
+            <div class="text-muted" style="font-size:0.75rem;">
+              {{ cat.total }} tipo{{ cat.total|pluralize }} • {{ cat.quantidade|floatformat:0 }} un.
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+
+<!-- ── Lista de Itens ──────────────────────────────────── -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h6 class="mb-0">
+      <i class="bi bi-box-seam me-2 text-primary"></i>
+      Itens em Estoque ({{ total_itens }})
+    </h6>
+    <a href="{% url 'estoque:item_lista' %}?almoxarifado={{ almoxarifado.pk }}" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-funnel"></i> Filtrar Lista Completa
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Item</th>
+            <th>Categoria</th>
+            <th class="text-end">Quantidade</th>
+            <th class="text-end">Mínimo</th>
+            <th class="text-end">Valor Unit.</th>
+            <th class="text-end">Total</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in itens %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ item.nome }}</div>
+              <small class="text-muted">{{ item.codigo_interno }}</small>
+            </td>
+            <td>
+              <small>
+                <i class="bi bi-{{ item.categoria.icone|default:'box-seam' }} me-1"></i>
+                {{ item.categoria.nome }}
+              </small>
+            </td>
+            <td class="text-end fw-bold">
+              {{ item.quantidade_atual|floatformat:0 }}
+              <small class="text-muted">{{ item.get_unidade_medida_display }}</small>
+            </td>
+            <td class="text-end text-muted">{{ item.quantidade_minima|floatformat:0 }}</td>
+            <td class="text-end">
+              {% if item.valor %}
+              R$ {{ item.valor|floatformat:2 }}
+              {% else %}
+              —
+              {% endif %}
+            </td>
+            <td class="text-end fw-semibold">
+              {% if item.valor %}
+              R$ {{ item.valor|floatformat:2 }}
+              {% else %}
+              —
+              {% endif %}
+            </td>
+            <td>
+              {% if item.quantidade_atual <= item.quantidade_minima %} <span class="badge bg-danger">Estoque
+                Baixo</span>
+                {% elif item.data_validade and item.data_validade < today %} <span class="badge bg-danger">
+                  Vencido</span>
+                  {% else %}
+                  <span class="badge bg-success">OK</span>
+                  {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'estoque:item_detalhe' item.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              Nenhum item cadastrado neste almoxarifado ainda.
+              <br>
+              <a href="{% url 'estoque:item_criar' %}" class="btn btn-sm btn-primary mt-2">
+                <i class="bi bi-plus-circle"></i> Cadastrar Primeiro Item
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Últimas Movimentações ────────────────────────────── -->
+{% if ultimas_movimentacoes %}
+<div class="card shadow-sm">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h6 class="mb-0">
+      <i class="bi bi-clock-history me-2 text-primary"></i>
+      Últimas Movimentações
+    </h6>
+    <a href="{% url 'estoque:movimentacao_lista' %}?almoxarifado={{ almoxarifado.pk }}"
+      class="btn btn-sm btn-outline-primary">
+      Ver Todas
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Item</th>
+            <th class="text-end">Quantidade</th>
+            <th>Responsável</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mov in ultimas_movimentacoes %}
+          <tr>
+            <td class="text-nowrap text-muted small">
+              {{ mov.data_movimentacao|date:"d/m/Y H:i" }}
+            </td>
+            <td>
+              {% if mov.tipo == 'ENTRADA' %}
+              <span class="badge bg-success">Entrada</span>
+              {% elif mov.tipo == 'SAIDA' %}
+              <span class="badge bg-danger">Saída</span>
+              {% elif mov.tipo == 'AJUSTE' %}
+              <span class="badge bg-warning text-dark">Ajuste</span>
+              {% else %}
+              <span class="badge bg-info text-dark">Transferência</span>
+              {% endif %}
+            </td>
+            <td>{{ mov.item.nome }}</td>
+            <td class="text-end fw-bold">{{ mov.quantidade|floatformat:0 }}</td>
+            <td class="small">{{ mov.responsavel.nome_completo|truncatechars:25 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -29,7 +29,11 @@
         <tbody>
           {% for alm in page_obj %}
           <tr>
-            <td class="fw-semibold">{{ alm.nome }}</td>
+            <td>
+              <a href="{% url 'estoque:almoxarifado_detalhe' alm.pk %}" class="text-decoration-none fw-semibold">
+                <i class="bi bi-building me-1"></i>{{ alm.nome }}
+              </a>
+            </td>
             <td class="text-muted small">{{ alm.localizacao }}</td>
             <td class="small">{{ alm.responsavel.nome_completo }}</td>
             <td class="text-center">

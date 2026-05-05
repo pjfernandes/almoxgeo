@@ -126,6 +126,10 @@ class ItemForm(forms.ModelForm):
             'fornecedor',
             'anexo'
         ]
+        help_texts = {
+            'quantidade_atual': 'Estoque inicial. Se preenchido, será registrada automaticamente uma ENTRADA no histórico do item.',
+            'quantidade_minima': 'Quando o estoque ficar abaixo deste valor, o sistema emitirá alerta.',
+        }
 
         widgets = {
             'descricao': forms.Textarea(attrs={'rows': 3}),

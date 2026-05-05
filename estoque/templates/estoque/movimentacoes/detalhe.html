@@ -1,0 +1,346 @@
+{% extends 'estoque/base.html' %}
+
+{% block title %}Movimentação #{{ movimentacao.pk }}{% endblock %}
+
+{% block breadcrumb %}
+{% include 'estoque/includes/breadcrumb.html' %}
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Cabeçalho ──────────────────────────────────────────── -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h4 class="mb-1">
+      <i class="bi bi-arrow-left-right text-primary"></i>
+      Movimentação #{{ movimentacao.pk }}
+    </h4>
+    <p class="text-muted mb-0">
+      <small>
+        <i class="bi bi-calendar3 me-1"></i>
+        {{ movimentacao.data_movimentacao|date:"d/m/Y" }} às {{ movimentacao.data_movimentacao|date:"H:i" }}
+      </small>
+    </p>
+  </div>
+
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'estoque:item_detalhe' movimentacao.item.pk %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-box-seam"></i> Ver Item
+    </a>
+    <a href="{% url 'estoque:movimentacao_criar' %}" class="btn btn-success btn-sm">
+      <i class="bi bi-plus-circle"></i> Nova Movimentação
+    </a>
+    <a href="{% url 'estoque:movimentacao_lista' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-list"></i> Voltar à Lista
+    </a>
+  </div>
+</div>
+
+
+<!-- ── Card Principal: Tipo da Movimentação ──────────────── -->
+<div class="card shadow-sm mb-4
+  {% if movimentacao.tipo == 'ENTRADA' %}border-success
+  {% elif movimentacao.tipo == 'SAIDA' %}border-danger
+  {% elif movimentacao.tipo == 'AJUSTE' %}border-warning
+  {% else %}border-info{% endif %}">
+
+  <div class="card-body">
+    <div class="row align-items-center">
+
+      <!-- Ícone e Tipo -->
+      <div class="col-md-3 text-center">
+        {% if movimentacao.tipo == 'ENTRADA' %}
+        <i class="bi bi-arrow-down-circle-fill text-success" style="font-size: 4rem;"></i>
+        <h3 class="text-success mt-2 mb-0">ENTRADA</h3>
+        {% elif movimentacao.tipo == 'SAIDA' %}
+        <i class="bi bi-arrow-up-circle-fill text-danger" style="font-size: 4rem;"></i>
+        <h3 class="text-danger mt-2 mb-0">SAÍDA</h3>
+        {% elif movimentacao.tipo == 'AJUSTE' %}
+        <i class="bi bi-pencil-square text-warning" style="font-size: 4rem;"></i>
+        <h3 class="text-warning mt-2 mb-0">AJUSTE</h3>
+        {% else %}
+        <i class="bi bi-arrow-left-right text-info" style="font-size: 4rem;"></i>
+        <h3 class="text-info mt-2 mb-0">TRANSFERÊNCIA</h3>
+        {% endif %}
+      </div>
+
+      <!-- Quantidades -->
+      <div class="col-md-9">
+        <div class="row g-3">
+
+          <div class="col-md-4 text-center">
+            <div class="border rounded p-3">
+              <div class="text-muted small mb-1">Quantidade Anterior</div>
+              <div class="fs-3 fw-bold text-secondary">
+                {{ movimentacao.quantidade_anterior }}
+              </div>
+              <small class="text-muted">{{ movimentacao.item.get_unidade_medida_display }}</small>
+            </div>
+          </div>
+
+          <div class="col-md-4 text-center">
+            <div class="border rounded p-3
+              {% if movimentacao.tipo == 'ENTRADA' %}bg-success bg-opacity-10
+              {% elif movimentacao.tipo == 'SAIDA' %}bg-danger bg-opacity-10
+              {% elif movimentacao.tipo == 'AJUSTE' %}bg-warning bg-opacity-10
+              {% else %}bg-info bg-opacity-10{% endif %}">
+              <div class="text-muted small mb-1">
+                {% if movimentacao.tipo == 'ENTRADA' %}+ Quantidade Adicionada
+                {% elif movimentacao.tipo == 'SAIDA' %}- Quantidade Retirada
+                {% elif movimentacao.tipo == 'AJUSTE' %}= Nova Quantidade
+                {% else %}↔ Quantidade Transferida{% endif %}
+              </div>
+              <div class="fs-2 fw-bold
+                {% if movimentacao.tipo == 'ENTRADA' %}text-success
+                {% elif movimentacao.tipo == 'SAIDA' %}text-danger
+                {% elif movimentacao.tipo == 'AJUSTE' %}text-warning
+                {% else %}text-info{% endif %}">
+                {{ movimentacao.quantidade }}
+              </div>
+              <small class="text-muted">{{ movimentacao.item.get_unidade_medida_display }}</small>
+            </div>
+          </div>
+
+          <div class="col-md-4 text-center">
+            <div class="border rounded p-3">
+              <div class="text-muted small mb-1">Quantidade Posterior</div>
+              <div class="fs-3 fw-bold text-primary">
+                {{ movimentacao.quantidade_posterior }}
+              </div>
+              <small class="text-muted">{{ movimentacao.item.get_unidade_medida_display }}</small>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Cards de Informações ──────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Card: Item Movimentado -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-primary text-white py-2">
+        <h6 class="mb-0">
+          <i class="bi bi-box-seam me-2"></i>Item Movimentado
+        </h6>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm table-borderless mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted" style="width:40%;">Nome:</td>
+              <td>
+                <a href="{% url 'estoque:item_detalhe' movimentacao.item.pk %}"
+                  class="text-decoration-none fw-semibold">
+                  {{ movimentacao.item.nome }}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Código Interno:</td>
+              <td><code>{{ movimentacao.item.codigo_interno }}</code></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Categoria:</td>
+              <td>
+                <i class="bi bi-{{ movimentacao.item.categoria.icone }} me-1"></i>
+                {{ movimentacao.item.categoria.nome }}
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Unidade de Medida:</td>
+              <td>{{ movimentacao.item.get_unidade_medida_display }}</td>
+            </tr>
+            {% if movimentacao.item.lote %}
+            <tr>
+              <td class="text-muted">Lote:</td>
+              <td><code>{{ movimentacao.item.lote }}</code></td>
+            </tr>
+            {% endif %}
+            {% if movimentacao.item.fornecedor %}
+            <tr>
+              <td class="text-muted">Fornecedor do Item:</td>
+              <td>{{ movimentacao.item.fornecedor.nome }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="text-muted">Estoque Atual:</td>
+              <td>
+                <span
+                  class="fw-bold {% if movimentacao.item.quantidade_atual <= movimentacao.item.quantidade_minima %}text-danger{% else %}text-success{% endif %}">
+                  {{ movimentacao.item.quantidade_atual }}
+                </span>
+                <small class="text-muted">{{ movimentacao.item.get_unidade_medida_display }}</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card: Localização e Responsável -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-success text-white py-2">
+        <h6 class="mb-0">
+          <i class="bi bi-geo-alt me-2"></i>Localização e Responsável
+        </h6>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm table-borderless mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted" style="width:40%;">
+                {% if movimentacao.tipo == 'TRANSFERENCIA' %}
+                Almoxarifado de Origem:
+                {% else %}
+                Almoxarifado:
+                {% endif %}
+              </td>
+              <td>
+                <i class="bi bi-building me-1"></i>
+                {{ movimentacao.almoxarifado.nome }}
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Localização:</td>
+              <td><small>{{ movimentacao.almoxarifado.localizacao }}</small></td>
+            </tr>
+
+            {% if movimentacao.almoxarifado_destino %}
+            <tr>
+              <td class="text-muted">Almoxarifado de Destino:</td>
+              <td>
+                <i class="bi bi-arrow-right me-1 text-info"></i>
+                <strong>{{ movimentacao.almoxarifado_destino.nome }}</strong>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Localização Destino:</td>
+              <td><small>{{ movimentacao.almoxarifado_destino.localizacao }}</small></td>
+            </tr>
+            {% endif %}
+
+            <tr>
+              <td class="text-muted">Data e Hora:</td>
+              <td>
+                <i class="bi bi-clock me-1"></i>
+                {{ movimentacao.data_movimentacao|date:"d/m/Y H:i:s" }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="text-muted">Responsável:</td>
+              <td>
+                <i class="bi bi-person-circle me-1"></i>
+                {{ movimentacao.responsavel.nome_completo }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="text-muted">Matrícula:</td>
+              <td><small>{{ movimentacao.responsavel.matricula }}</small></td>
+            </tr>
+
+            {% if movimentacao.responsavel.cargo %}
+            <tr>
+              <td class="text-muted">Cargo:</td>
+              <td><small>{{ movimentacao.responsavel.cargo }}</small></td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ── Card: Solicitante (apenas para SAIDA) ────────────── -->
+{% if movimentacao.solicitante_nome %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-info text-white py-2">
+    <h6 class="mb-0">
+      <i class="bi bi-person-fill me-2"></i>Solicitante
+    </h6>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <strong>Nome:</strong> {{ movimentacao.solicitante_nome }}
+      </div>
+      {% if movimentacao.solicitante_departamento %}
+      <div class="col-md-6">
+        <strong>Departamento:</strong> {{ movimentacao.solicitante_departamento }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+
+<!-- ── Card: Observação ──────────────────────────────────── -->
+{% if movimentacao.observacao %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white py-2">
+    <h6 class="mb-0">
+      <i class="bi bi-chat-left-text me-2 text-primary"></i>Observação
+    </h6>
+  </div>
+  <div class="card-body">
+    <p class="mb-0">{{ movimentacao.observacao|linebreaks }}</p>
+  </div>
+</div>
+{% endif %}
+
+
+<!-- ── Resumo Visual ──────────────────────────────────────── -->
+<div class="card shadow-sm bg-light">
+  <div class="card-body py-3">
+    <div class="d-flex align-items-center justify-content-center flex-wrap gap-3">
+
+      <div class="text-center">
+        <div class="text-muted small">De</div>
+        <div class="fw-bold">
+          <i class="bi bi-building me-1"></i>{{ movimentacao.almoxarifado.nome }}
+        </div>
+      </div>
+
+      <div class="text-center px-3">
+        <i class="bi bi-arrow-right fs-3 text-primary"></i>
+        <div class="fw-bold mt-1">
+          {{ movimentacao.quantidade }} {{ movimentacao.item.get_unidade_medida_display }}
+        </div>
+      </div>
+
+      <div class="text-center">
+        <div class="text-muted small">
+          {% if movimentacao.almoxarifado_destino %}Para{% else %}Movimentação{% endif %}
+        </div>
+        <div class="fw-bold">
+          {% if movimentacao.almoxarifado_destino %}
+          <i class="bi bi-building me-1"></i>{{ movimentacao.almoxarifado_destino.nome }}
+          {% elif movimentacao.solicitante_nome %}
+          <i class="bi bi-person me-1"></i>{{ movimentacao.solicitante_nome }}
+          {% else %}
+          <i
+            class="bi bi-{% if movimentacao.tipo == 'ENTRADA' %}arrow-down-circle{% else %}arrow-up-circle{% endif %} me-1"></i>
+          {{ movimentacao.get_tipo_display }}
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

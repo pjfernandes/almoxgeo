@@ -83,46 +83,65 @@
       {% endif %}
 
 
-      <!-- ── Sugestão de entrada para item recém-criado ──────────── -->
-      {% if request.session.item_recem_criado == item.pk %}
-      <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-        <div class="d-flex align-items-start">
-          <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
-          <div class="flex-grow-1">
-            <h5 class="alert-heading mb-2">
-              <strong>Item cadastrado com sucesso!</strong>
-            </h5>
-            <p class="mb-2">
-              O item foi criado, mas ainda não possui estoque registrado. Gostaria de registrar a entrada agora?
-            </p>
-            <hr class="my-3">
-            <div class="d-flex gap-2">
-              <a href="{% url 'estoque:movimentacao_criar' %}?item={{ item.pk }}" class="btn btn-primary">
-                <i class="bi bi-arrow-down-circle me-1"></i> Sim, Registrar Entrada Agora
-              </a>
-              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="alert">
-                <i class="bi bi-clock me-1"></i> Registrar Depois
-              </button>
-            </div>
+    <!-- ── Alertas para item recém-criado ──────────────────────── -->
+    {% if request.session.item_recem_criado == item.pk %}
+
+    {% if item.quantidade_atual > 0 %}
+    <!-- Cadastrado COM estoque inicial -->
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+      <div class="d-flex align-items-start">
+        <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
+        <div class="flex-grow-1">
+          <h5 class="alert-heading mb-2">
+            <strong>Item cadastrado com sucesso!</strong>
+          </h5>
+          <p class="mb-0">
+            Item criado com <strong>{{ item.quantidade_atual }} {{ item.get_unidade_medida_display }}</strong> no estoque.
+            Uma movimentação de <strong>ENTRADA</strong> foi registrada automaticamente no histórico abaixo.
+          </p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+    </div>
+    {% else %}
+    <!-- Cadastrado SEM estoque inicial -->
+    <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
+      <div class="d-flex align-items-start">
+        <i class="bi bi-info-circle-fill fs-3 me-3 text-info"></i>
+        <div class="flex-grow-1">
+          <h5 class="alert-heading mb-2">
+            <strong>Item cadastrado sem estoque inicial</strong>
+          </h5>
+          <p class="mb-2">
+            O item foi criado com quantidade 0. Quando o material chegar fisicamente, registre uma entrada para atualizar o
+            estoque.
+          </p>
+          <hr class="my-3">
+          <div class="d-flex gap-2">
+            <a href="{% url 'estoque:movimentacao_criar' %}?item={{ item.pk }}" class="btn btn-primary">
+              <i class="bi bi-arrow-down-circle me-1"></i> Registrar Entrada Agora
+            </a>
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="alert">
+              <i class="bi bi-clock me-1"></i> Mais Tarde
+            </button>
           </div>
         </div>
       </div>
+    </div>
+    {% endif %}
 
-      <script>
-        // Limpar flag após mostrar o alerta
-        document.addEventListener('DOMContentLoaded', function () {
-          {% if request.session.item_recem_criado == item.pk %}
-          // Fazer requisição para limpar a flag
-          fetch('{% url "estoque:limpar_flag_item" %}', {
-            method: 'POST',
-            headers: {
-              'X-CSRFToken': '{{ csrf_token }}'
-            }
-          });
-          {% endif %}
+    <script>
+      // Limpar flag após mostrar o alerta
+      document.addEventListener('DOMContentLoaded', function () {
+        fetch('{% url "estoque:limpar_flag_item" %}', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          }
         });
-      </script>
-      {% endif %}
+      });
+    </script>
+    {% endif %}
 
 
       <!-- ── Cards de informações ──────────────────────────────────── -->

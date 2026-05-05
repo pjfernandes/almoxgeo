@@ -449,12 +449,38 @@ def item_criar(request):
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES)
         if form.is_valid():
-            item = form.save()
-            messages.success(
-                request,
-                f'Item "{item.nome}" cadastrado com sucesso! Código: {item.codigo_interno}'
-            )
-            # Flag para mostrar sugestão de entrada
+            # Capturar a quantidade inicial antes de salvar
+            quantidade_inicial = form.cleaned_data.get('quantidade_atual', 0) or 0
+
+            # Salvar o item com quantidade 0 (entrada será criada via movimentação)
+            item = form.save(commit=False)
+            item.quantidade_atual = 0
+            item.save()
+
+            # Se cadastrou com quantidade > 0, cria movimentação de ENTRADA automática
+            if quantidade_inicial > 0:
+                Movimentacao.objects.create(
+                    tipo='ENTRADA',
+                    item=item,
+                    almoxarifado=item.almoxarifado,
+                    quantidade=quantidade_inicial,
+                    responsavel=request.user,
+                    observacao='Estoque inicial - cadastro do item'
+                )
+                # A movimentação automaticamente atualiza item.quantidade_atual
+
+                messages.success(
+                    request,
+                    f'Item "{item.nome}" cadastrado com {quantidade_inicial} {item.get_unidade_medida_display()} no estoque! '
+                    f'Código: {item.codigo_interno}'
+                )
+            else:
+                messages.success(
+                    request,
+                    f'Item "{item.nome}" cadastrado sem estoque inicial. Código: {item.codigo_interno}'
+                )
+
+            # Flag para mostrar alerta apropriado na página de detalhes
             request.session['item_recem_criado'] = item.pk
             return redirect('estoque:item_detalhe', pk=item.pk)
     else:
@@ -503,6 +529,25 @@ def movimentacao_lista(request):
         'filtro': filtro,
     })
 
+@login_required
+def movimentacao_detalhe(request, pk):
+    """Exibe os detalhes completos de uma movimentação"""
+    movimentacao = get_object_or_404(
+        Movimentacao.objects.select_related(
+            'item',
+            'item__categoria',
+            'item__fornecedor',
+            'almoxarifado',
+            'almoxarifado_destino',
+            'responsavel',
+        ),
+        pk=pk
+    )
+
+    return render(request, 'estoque/movimentacoes/detalhe.html', {
+        'movimentacao': movimentacao,
+    })
+
 
 @login_required
 def movimentacao_criar(request):
@@ -543,11 +588,16 @@ from reportlab.lib.enums import TA_CENTER
 def movimentacao_exportar_csv(request):
     """Exporta as movimentações filtradas para CSV."""
     qs = Movimentacao.objects.select_related(
-        'item', 'almoxarifado', 'responsavel', 'fornecedor', 'almoxarifado_destino'
+        'item', 'almoxarifado', 'responsavel', 'item__fornecedor', 'almoxarifado_destino'
     ).order_by('-data_movimentacao')
 
     # Aplicar os mesmos filtros da listagem
-    filtro = MovimentacaoFilter(request.GET, queryset=qs)
+    filtro = MovimentacaoFilter(
+        request.GET,
+        queryset=Movimentacao.objects.select_related(
+            'item', 'almoxarifado', 'responsavel', 'almoxarifado_destino', 'item__fornecedor'
+        )
+    )
 
     # Criar a resposta HTTP com content-type CSV
     response = HttpResponse(content_type='text/csv; charset=utf-8')
@@ -559,50 +609,35 @@ def movimentacao_exportar_csv(request):
     writer = csv.writer(response, delimiter=';')
     # Cabeçalho
     writer.writerow([
-         'Data', 'Tipo', 'Item', 'Código', 'Almoxarifado',
-         'Quantidade', 'Qtd. Anterior', 'Qtd. Posterior',
+        'Data', 'Tipo', 'Item', 'Código', 'Almoxarifado',
+        'Quantidade', 'Qtd. Anterior', 'Qtd. Posterior',
         'Solicitante/Destino', 'Responsável', 'Observação'
-     ])
+    ])
 
-    # for mov in filtro.qs:
-    #     writer.writerow([
-    #         mov.data_movimentacao.strftime('%d/%m/%Y %H:%M'),
-    #         mov.get_tipo_display(),
-    #         mov.item.nome,
-    #         mov.item.codigo_interno,
-    #         mov.almoxarifado.nome,
-    #         mov.quantidade,
-    #         mov.quantidade_anterior,
-    #         mov.quantidade_posterior,
-    #         mov.destino_origem or '',
-    #         mov.fornecedor.nome if mov.fornecedor else '',
-    #         mov.responsavel.nome_completo,
-    #         mov.observacao or '',
-    #     ])
     for mov in filtro.qs:
-            solicitante = ''
-            if mov.solicitante_nome:
-                solicitante = f"{mov.solicitante_nome}"
-                if mov.solicitante_departamento:
-                    solicitante += f" ({mov.solicitante_departamento})"
-            elif mov.almoxarifado_destino:
-                solicitante = f"→ {mov.almoxarifado_destino.nome}"
-            elif mov.fornecedor:
-                solicitante = mov.fornecedor.nome
+        solicitante = ''
+        if mov.solicitante_nome:
+            solicitante = f"{mov.solicitante_nome}"
+            if mov.solicitante_departamento:
+                solicitante += f" ({mov.solicitante_departamento})"
+        elif mov.almoxarifado_destino:
+            solicitante = f"→ {mov.almoxarifado_destino.nome}"
+        elif mov.item.fornecedor:
+            solicitante = mov.item.fornecedor.nome
 
-            writer.writerow([
-                mov.data_movimentacao.strftime('%d/%m/%Y %H:%M'),
-                mov.get_tipo_display(),
-                mov.item.nome,
-                mov.item.codigo_interno,
-                mov.almoxarifado.nome,
-                mov.quantidade,
-                mov.quantidade_anterior,
-                mov.quantidade_posterior,
-                solicitante,
-                mov.responsavel.nome_completo,
-                mov.observacao or '',
-            ])
+        writer.writerow([
+            mov.data_movimentacao.strftime('%d/%m/%Y %H:%M'),
+            mov.get_tipo_display(),
+            mov.item.nome,
+            mov.item.codigo_interno,
+            mov.almoxarifado.nome,
+            mov.quantidade,
+            mov.quantidade_anterior,
+            mov.quantidade_posterior,
+            solicitante,
+            mov.responsavel.nome_completo,
+            mov.observacao or '',
+        ])
 
     return response
 
@@ -611,7 +646,7 @@ def movimentacao_exportar_csv(request):
 def movimentacao_exportar_pdf(request):
     """Exporta as movimentações filtradas para PDF com ReportLab."""
     qs = Movimentacao.objects.select_related(
-        'item', 'almoxarifado', 'responsavel'
+        'item', 'almoxarifado', 'responsavel', 'item__fornecedor', 'almoxarifado_destino'
     ).order_by('-data_movimentacao')
 
     filtro = MovimentacaoFilter(request.GET, queryset=qs)
@@ -652,7 +687,7 @@ def movimentacao_exportar_pdf(request):
     ))
 
     # Tabela de dados
-    cabecalho = ['Data', 'Tipo', 'Item', 'Almoxarifado', 'Qtd.', 'Anterior', 'Posterior', 'Solicitante/Destino','Responsável']
+    cabecalho = ['Data', 'Tipo', 'Item', 'Almoxarifado', 'Qtd.', 'Anterior', 'Posterior', 'Solicitante/Destino', 'Responsável']
     dados = [cabecalho]
 
     for mov in movimentacoes:
@@ -663,8 +698,8 @@ def movimentacao_exportar_pdf(request):
                 solicitante += f" ({mov.solicitante_departamento})"
         elif mov.almoxarifado_destino:
             solicitante = f"→ {mov.almoxarifado_destino.nome}"
-        elif mov.fornecedor:
-            solicitante = mov.fornecedor.nome
+        elif mov.item.fornecedor:
+            solicitante = mov.item.fornecedor.nome
 
         dados.append([
             mov.data_movimentacao.strftime('%d/%m/%Y\n%H:%M'),
@@ -709,6 +744,7 @@ def movimentacao_exportar_pdf(request):
 
     doc.build(elementos)
     return response
+
 
 #Usuários
 from .forms import UsuarioForm
@@ -970,3 +1006,70 @@ def limpar_flag_item(request):
     if 'item_recem_criado' in request.session:
         del request.session['item_recem_criado']
     return JsonResponse({'status': 'ok'})
+
+@login_required
+def almoxarifado_detalhe(request, pk):
+    almoxarifado = get_object_or_404(Almoxarifado, pk=pk)
+
+    # Buscar todos os itens deste almoxarifado
+    itens = Item.objects.filter(
+        almoxarifado=almoxarifado
+    ).select_related('categoria', 'fornecedor').order_by('nome')
+
+    # Estatísticas gerais
+    total_itens = itens.count()
+    total_unidades = sum(item.quantidade_atual for item in itens)
+
+    # Valor total do estoque
+    valor_total = sum(
+        (item.valor or 0) * item.quantidade_atual
+        for item in itens
+    )
+
+    # Itens com estoque baixo
+    itens_baixo_estoque = [
+        item for item in itens
+        if item.quantidade_atual <= item.quantidade_minima
+    ]
+
+    # Itens vencidos ou próximos a vencer
+    from datetime import date, timedelta
+    hoje = date.today()
+
+    itens_vencidos = [
+        item for item in itens
+        if item.data_validade and item.data_validade < hoje
+    ]
+
+    itens_vencendo = [
+        item for item in itens
+        if item.data_validade
+        and hoje <= item.data_validade <= hoje + timedelta(days=30)
+    ]
+
+    # Itens por categoria (para gráfico)
+    from django.db.models import Count, Sum
+    itens_por_categoria = itens.values(
+        'categoria__nome', 'categoria__icone'
+    ).annotate(
+        total=Count('id'),
+        quantidade=Sum('quantidade_atual')
+    ).order_by('-quantidade')
+
+    # Últimas movimentações deste almoxarifado
+    ultimas_movimentacoes = Movimentacao.objects.filter(
+        almoxarifado=almoxarifado
+    ).select_related('item', 'responsavel').order_by('-data_movimentacao')[:10]
+
+    return render(request, 'estoque/almoxarifados/detalhe.html', {
+        'almoxarifado': almoxarifado,
+        'itens': itens,
+        'total_itens': total_itens,
+        'total_unidades': total_unidades,
+        'valor_total': valor_total,
+        'itens_baixo_estoque': itens_baixo_estoque,
+        'itens_vencidos': itens_vencidos,
+        'itens_vencendo': itens_vencendo,
+        'itens_por_categoria': itens_por_categoria,
+        'ultimas_movimentacoes': ultimas_movimentacoes,
+    })

@@ -2,7 +2,7 @@
 {% block title %}Movimentações{% endblock %}
 
 {% block breadcrumb %}
-  {% include 'estoque/includes/breadcrumb.html' %}
+{% include 'estoque/includes/breadcrumb.html' %}
 {% endblock %}
 
 {% block content %}
@@ -74,7 +74,8 @@
             <th class="text-end">Antes</th>
             <th class="text-end">Depois</th>
             <th>Responsável</th>
-            <th>Detalhes</th>
+            <th>Solicitante/Destino</th>
+            <th class="text-center">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -103,11 +104,9 @@
             <td class="text-end fw-bold">{{ mov.quantidade }}</td>
             <td class="text-end text-muted small">{{ mov.quantidade_anterior }}</td>
             <td class="text-end small fw-semibold">{{ mov.quantidade_posterior }}</td>
-
-
             <td class="small">{{ mov.responsavel.nome_completo|truncatechars:25 }}</td>
 
-            <!-- INÍCIO DO BLOCO NOVO -->
+            <!-- Solicitante/Destino -->
             <td class="small">
               {% if mov.solicitante_nome %}
               {{ mov.solicitante_nome }}
@@ -118,17 +117,24 @@
               {% endif %}
               {% elif mov.almoxarifado_destino %}
               <span class="text-info">→ {{ mov.almoxarifado_destino.nome }}</span>
-              {% elif mov.fornecedor %}
-              <span class="text-success">{{ mov.fornecedor.nome }}</span>
+              {% elif mov.item.fornecedor %}
+              <span class="text-success">{{ mov.item.fornecedor.nome }}</span>
               {% else %}
               —
               {% endif %}
             </td>
-            <!-- FIM DO BLOCO NOVO -->
+
+            <!-- Botão de Detalhes -->
+            <td class="text-center">
+              <a href="{% url 'estoque:movimentacao_detalhe' mov.pk %}" class="btn btn-sm btn-outline-primary"
+                title="Ver detalhes">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="9" class="text-center text-muted py-4">
+            <td colspan="10" class="text-center text-muted py-4">
               <i class="bi bi-inbox fs-3 d-block mb-2"></i>
               Nenhuma movimentação encontrada.
             </td>
