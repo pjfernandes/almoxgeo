@@ -551,14 +551,20 @@ def movimentacao_detalhe(request, pk):
 
 @login_required
 def movimentacao_criar(request):
-    """Registra uma nova movimentação de estoque."""
+    """Registra uma nova movimentação de estoque.
+
+    Suporta pré-preenchimento via query string:
+    - ?item=<pk>    → pré-seleciona o item e seu almoxarifado
+    - ?tipo=<TIPO>  → pré-seleciona o tipo (ENTRADA, SAIDA, AJUSTE, TRANSFERENCIA)
+    """
     item_pk = request.GET.get('item')
+    tipo_inicial = request.GET.get('tipo')
 
     if request.method == 'POST':
         form = MovimentacaoForm(request.POST)
         if form.is_valid():
             mov = form.save(commit=False)
-            mov.responsavel = request.user  # registra quem está logado
+            mov.responsavel = request.user
             try:
                 mov.save()
                 messages.success(request, 'Movimentação registrada com sucesso!')
@@ -566,11 +572,22 @@ def movimentacao_criar(request):
             except Exception as e:
                 messages.error(request, f'Erro ao registrar movimentação: {e}')
     else:
-        form = MovimentacaoForm(item_pk=item_pk)
+        form = MovimentacaoForm(item_pk=item_pk, tipo_inicial=tipo_inicial)
+
+    # Carregar dados do item para mostrar contexto na tela
+    item_contexto = None
+    if item_pk:
+        try:
+            item_contexto = Item.objects.select_related(
+                'almoxarifado', 'categoria'
+            ).get(pk=item_pk)
+        except Item.DoesNotExist:
+            pass
 
     return render(request, 'estoque/movimentacoes/form.html', {
         'form': form,
         'titulo': 'Nova Movimentação',
+        'item_contexto': item_contexto,
     })
 
 #Views de Exportação

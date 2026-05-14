@@ -18,6 +18,32 @@
       </div>
       <div class="card-body">
 
+
+        {# Card de contexto do item pré-selecionado #}
+        {% if item_contexto %}
+        <div class="alert alert-success border-success d-flex align-items-start mb-4" role="alert">
+          <i class="bi bi-link-45deg fs-4 me-3 mt-1"></i>
+          <div class="flex-grow-1">
+            <strong>Item pré-selecionado:</strong> {{ item_contexto.nome }}
+            <span class="text-muted">[{{ item_contexto.codigo_interno }}]</span>
+            <br>
+            <small class="text-muted">
+              <i class="bi bi-building me-1"></i>{{ item_contexto.almoxarifado.nome }}
+              &nbsp;•&nbsp;
+              <i class="bi bi-box-seam me-1"></i>Estoque atual: <strong>{{ item_contexto.quantidade_atual }} {{ item_contexto.get_unidade_medida_display }}</strong>
+              {% if item_contexto.categoria %}
+              &nbsp;•&nbsp;
+              <i class="bi bi-tag me-1"></i>{{ item_contexto.categoria.nome }}
+              {% endif %}
+            </small>
+          </div>
+          <a href="{% url 'estoque:movimentacao_criar' %}" class="btn btn-sm btn-outline-secondary ms-2"
+            title="Limpar item e escolher outro">
+            <i class="bi bi-x-lg"></i> Trocar
+          </a>
+        </div>
+        {% endif %}
+
         <!-- Card de ajuda rápida -->
         <div class="alert alert-info d-flex align-items-start mb-4" role="alert">
           <i class="bi bi-info-circle-fill me-2 fs-5 mt-1"></i>

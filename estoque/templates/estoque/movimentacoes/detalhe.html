@@ -27,8 +27,8 @@
     <a href="{% url 'estoque:item_detalhe' movimentacao.item.pk %}" class="btn btn-primary btn-sm">
       <i class="bi bi-box-seam"></i> Ver Item
     </a>
-    <a href="{% url 'estoque:movimentacao_criar' %}" class="btn btn-success btn-sm">
-      <i class="bi bi-plus-circle"></i> Nova Movimentação
+    <a href="{% url 'estoque:movimentacao_criar' %}?item={{ movimentacao.item.pk }}" class="btn btn-success btn-sm">
+      <i class="bi bi-plus-circle"></i> Nova Movimentação deste Item
     </a>
     <a href="{% url 'estoque:movimentacao_lista' %}" class="btn btn-outline-secondary btn-sm">
       <i class="bi bi-list"></i> Voltar à Lista

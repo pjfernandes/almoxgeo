@@ -200,6 +200,20 @@ class Item(models.Model):
         ('ou', 'Outros'),
     ]
 
+    # Classificação patrimonial (NOVO)
+    TIPO_MATERIAL_CHOICES = [
+        ('CONSUMO', 'Material de Consumo'),
+        ('PERMANENTE', 'Bem Permanente'),
+    ]
+
+    # Tipos de empenho (NOVO)
+    TIPO_EMPENHO_CHOICES = [
+        ('', '—'),
+        ('ORDINARIO', 'Ordinário'),
+        ('ESTIMATIVO', 'Estimativo'),
+        ('GLOBAL', 'Global'),
+    ]
+
     nome = models.CharField(
         max_length=200,
         verbose_name='Nome do item'
@@ -297,6 +311,42 @@ class Item(models.Model):
         verbose_name='Fornecedor padrão'
     )
 
+    # ─── Classificação patrimonial (NOVO) ───────────────────────
+    tipo_material = models.CharField(
+        max_length=15, choices=TIPO_MATERIAL_CHOICES, default='CONSUMO',
+        verbose_name='Tipo de material',
+        help_text='Material de Consumo (uso/desgaste) ou Bem Permanente (durável)'
+    )
+
+    # ─── Empenho (NOVO) ─────────────────────────────────────────
+    numero_empenho = models.CharField(
+        max_length=50, blank=True, verbose_name='Número do empenho',
+        help_text='Ex: 2024NE000123'
+    )
+    tipo_empenho = models.CharField(
+        max_length=15, choices=TIPO_EMPENHO_CHOICES, blank=True,
+        verbose_name='Tipo de empenho'
+    )
+
+    # ─── Processo SEI (NOVO) ────────────────────────────────────
+    processo_sei = models.CharField(
+        max_length=50, blank=True, verbose_name='Processo SEI',
+        help_text='Número do processo no SEI/UFF (ex: 23069.000123/2024-12)'
+    )
+
+    # ─── Nota fiscal (NOVO) ─────────────────────────────────────
+    nf_numero = models.CharField(max_length=20, blank=True, verbose_name='Número da NF')
+    nf_serie = models.CharField(max_length=10, blank=True, verbose_name='Série da NF')
+    nf_data_emissao = models.DateField(null=True, blank=True, verbose_name='Data de emissão da NF')
+    nf_data_entrada = models.DateField(
+        null=True, blank=True, verbose_name='Data de entrada (recebimento)',
+        help_text='Data em que o material foi recebido no almoxarifado'
+    )
+    nf_valor = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        verbose_name='Valor total da NF (R$)'
+    )
+
     # Documentação
     anexo = models.FileField(
         upload_to='itens/anexos/%Y/%m/',
@@ -346,6 +396,11 @@ class Item(models.Model):
     def get_unidade_display_curto(self):
         """Retorna a sigla da unidade de medida."""
         return self.unidade_medida
+
+    @property
+    def eh_permanente(self):
+        """True se for bem permanente (tombamento obrigatório)."""
+        return self.tipo_material == 'PERMANENTE'
 
     def gerar_codigo_interno(self):
         """
@@ -556,6 +611,7 @@ class Movimentacao(models.Model):
                         'descricao': self.item.descricao,
                         'categoria': self.item.categoria,
                         'unidade_medida': self.item.unidade_medida,
+                        'tipo_material': self.item.tipo_material,
                         'quantidade_atual': 0,
                         'quantidade_minima': self.item.quantidade_minima,
                         'localizacao_fisica': '',

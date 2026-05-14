@@ -119,16 +119,19 @@ class ItemForm(forms.ModelForm):
         model  = Item
         fields = [
             'nome', 'descricao', 'categoria', 'almoxarifado',
-            'unidade_medida', 'quantidade_atual', 'quantidade_minima',
-            'localizacao_fisica',
+            'unidade_medida', 'tipo_material',
+            'quantidade_atual', 'quantidade_minima', 'localizacao_fisica',
             'lote', 'data_fabricacao', 'data_validade',
-            'codigo_patrimonio', 'valor',
-            'fornecedor',
+            'codigo_patrimonio', 'valor', 'fornecedor',
+            'numero_empenho', 'tipo_empenho',
+            'processo_sei',
+            'nf_numero', 'nf_serie', 'nf_data_emissao', 'nf_data_entrada', 'nf_valor',
             'anexo'
         ]
         help_texts = {
             'quantidade_atual': 'Estoque inicial. Se preenchido, será registrada automaticamente uma ENTRADA no histórico do item.',
             'quantidade_minima': 'Quando o estoque ficar abaixo deste valor, o sistema emitirá alerta.',
+            'tipo_material': 'Material de Consumo (papel, caneta, reagente) ou Bem Permanente (microscópio, GPS).',
         }
 
         widgets = {
@@ -138,6 +141,12 @@ class ItemForm(forms.ModelForm):
             'data_validade': forms.DateInput(attrs={'type': 'date'}),
             'codigo_patrimonio': forms.TextInput(attrs={'placeholder': 'Ex: 2024.001.123'}),
             'lote': forms.TextInput(attrs={'placeholder': 'Ex: LOTE-2024-A123'}),
+              'numero_empenho': forms.TextInput(attrs={'placeholder': 'Ex: 2024NE000123'}),
+            'processo_sei': forms.TextInput(attrs={'placeholder': 'Ex: 23069.000123/2024-12'}),
+            'nf_numero': forms.TextInput(attrs={'placeholder': 'Ex: 123456'}),
+            'nf_serie': forms.TextInput(attrs={'placeholder': 'Ex: 1'}),
+            'nf_data_emissao': forms.DateInput(attrs={'type': 'date'}),
+            'nf_data_entrada': forms.DateInput(attrs={'type': 'date'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -145,7 +154,8 @@ class ItemForm(forms.ModelForm):
         self.fields['almoxarifado'].queryset = Almoxarifado.objects.filter(ativo=True)
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            # Identificação básica
+            # Identificação
+            HTML('<h6 class="text-muted mb-3"><i class="bi bi-info-circle me-2"></i>Identificação</h6>'),
             Row(
                 Column('nome',          css_class='col-md-8'),
                 Column('unidade_medida',css_class='col-md-4'),
@@ -154,10 +164,13 @@ class ItemForm(forms.ModelForm):
                 Column('categoria',     css_class='col-md-6'),
                 Column('almoxarifado',  css_class='col-md-6'),
             ),
+            Row(
+                Column('tipo_material', css_class='col-md-12'),
+            ),
             'descricao',
 
-            # Quantidades e localização
-            HTML('<hr class="my-3"><h6 class="text-muted mb-3">Estoque e Localização</h6>'),
+            # Estoque
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3"><i class="bi bi-box-seam me-2"></i>Estoque e Localização</h6>'),
             Row(
                 Column('quantidade_atual',   css_class='col-md-4'),
                 Column('quantidade_minima',  css_class='col-md-4'),
@@ -165,23 +178,46 @@ class ItemForm(forms.ModelForm):
             ),
 
             # Rastreabilidade
-            HTML('<hr class="my-3"><h6 class="text-muted mb-3">Rastreabilidade e Qualidade</h6>'),
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3"><i class="bi bi-clipboard-check me-2"></i>Rastreabilidade e Qualidade</h6>'),
             Row(
                 Column('lote',            css_class='col-md-4'),
                 Column('data_fabricacao', css_class='col-md-4'),
                 Column('data_validade',   css_class='col-md-4'),
             ),
 
-            # Patrimônio e valor
-            HTML('<hr class="my-3"><h6 class="text-muted mb-3">Controle Patrimonial</h6>'),
+            # Patrimonial
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3"><i class="bi bi-bank me-2"></i>Controle Patrimonial e Financeiro</h6>'),
             Row(
                 Column('codigo_patrimonio', css_class='col-md-4'),
                 Column('valor',             css_class='col-md-4'),
                 Column('fornecedor',        css_class='col-md-4'),
             ),
 
+            # Empenho
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3"><i class="bi bi-file-earmark-text me-2"></i>Empenho</h6>'),
+            Row(
+                Column('numero_empenho', css_class='col-md-6'),
+                Column('tipo_empenho',   css_class='col-md-6'),
+            ),
+
+            # SEI
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3"><i class="bi bi-folder me-2"></i>Processo SEI</h6>'),
+            'processo_sei',
+
+            # Nota fiscal
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3"><i class="bi bi-receipt me-2"></i>Nota Fiscal</h6>'),
+            Row(
+                Column('nf_numero',       css_class='col-md-4'),
+                Column('nf_serie',        css_class='col-md-4'),
+                Column('nf_valor',        css_class='col-md-4'),
+            ),
+            Row(
+                Column('nf_data_emissao', css_class='col-md-6'),
+                Column('nf_data_entrada', css_class='col-md-6'),
+            ),
+
             # Anexo
-            HTML('<hr class="my-3"><h6 class="text-muted mb-3">Documentação</h6>'),
+            HTML('<hr class="my-3"><h6 class="text-muted mb-3"><i class="bi bi-paperclip me-2"></i>Documentação</h6>'),
             'anexo',
             HTML('<small class="text-muted">Aceita PDF, imagens (JPG, PNG), documentos. Máx 10MB.</small>'),
 
@@ -214,16 +250,24 @@ class MovimentacaoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         item_pk = kwargs.pop('item_pk', None)
+        tipo_inicial = kwargs.pop('tipo_inicial', None)
         super().__init__(*args, **kwargs)
 
-        # Se vier de um item específico, pré-selecionar
+        # Se vier de um item específico, pré-selecionar e travar o item
+        item_preselecionado = None
         if item_pk:
             try:
-                item = Item.objects.get(pk=item_pk)
-                self.fields['item'].initial = item
-                self.fields['almoxarifado'].initial = item.almoxarifado
+                item_preselecionado = Item.objects.select_related('almoxarifado').get(pk=item_pk)
+                self.fields['item'].initial = item_preselecionado
+                self.fields['almoxarifado'].initial = item_preselecionado.almoxarifado
+                # Restringir queryset para mostrar apenas esse item
+                self.fields['item'].queryset = Item.objects.filter(pk=item_pk)
             except Item.DoesNotExist:
                 pass
+
+        # Pré-selecionar tipo se vier na URL (ex: ?tipo=ENTRADA)
+        if tipo_inicial and tipo_inicial in dict(Movimentacao.TIPO_CHOICES):
+            self.fields['tipo'].initial = tipo_inicial
 
         # Configurar layout crispy
         self.helper = FormHelper()
