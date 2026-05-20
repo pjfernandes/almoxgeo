@@ -402,7 +402,8 @@ class UsuarioForm(forms.ModelForm):
 
     class Meta:
         model  = Usuario
-        fields = ['username', 'nome_completo', 'matricula', 'email', 'cargo', 'is_ativo', 'is_staff']
+        #fields = ['username', 'nome_completo', 'matricula', 'email', 'cargo', 'is_ativo', 'is_staff']
+        fields = ['username', 'nome_completo', 'email', 'cargo', 'is_ativo', 'is_staff']
 
     def __init__(self, *args, **kwargs):
         self.criando = kwargs.pop('criando', False)
@@ -413,8 +414,8 @@ class UsuarioForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.layout = Layout(
             Row(
-                Column('nome_completo', css_class='col-md-8'),
-                Column('matricula',    css_class='col-md-4'),
+                Column('nome_completo', css_class='col-md-12'),
+                #Column('matricula',    css_class='col-md-4'),
             ),
             Row(
                 Column('username', css_class='col-md-6'),

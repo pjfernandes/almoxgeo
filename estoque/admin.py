@@ -11,20 +11,19 @@ from .models import Usuario, Categoria, Fornecedor, Almoxarifado, Item, Moviment
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
     """Admin customizado para o modelo de usuário."""
-    list_display  = ('username', 'nome_completo', 'matricula', 'cargo', 'email', 'is_ativo', 'is_staff')
+    list_display  = ('username', 'nome_completo', 'cargo', 'email', 'is_ativo', 'is_staff')
     list_filter   = ('is_ativo', 'is_staff', 'cargo')
-    search_fields = ('username', 'nome_completo', 'matricula', 'email')
+    search_fields = ('username', 'nome_completo', 'email')
     ordering      = ('nome_completo',)
 
-    # Adicionar campos customizados aos fieldsets do UserAdmin
     fieldsets = UserAdmin.fieldsets + (
         ('Dados Institucionais', {
-            'fields': ('matricula', 'nome_completo', 'cargo', 'is_ativo')
+            'fields': ('nome_completo', 'cargo', 'is_ativo')
         }),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Dados Institucionais', {
-            'fields': ('matricula', 'nome_completo', 'email', 'cargo', 'is_ativo')
+            'fields': ('nome_completo', 'email', 'cargo', 'is_ativo')
         }),
     )
 

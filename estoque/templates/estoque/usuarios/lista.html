@@ -19,7 +19,6 @@
       <thead class="table-light">
         <tr>
           <th>Nome</th>
-          <th>Matrícula</th>
           <th>Usuário</th>
           <th>Cargo</th>
           <th class="text-center">Admin</th>
@@ -31,7 +30,6 @@
         {% for u in page_obj %}
         <tr>
           <td class="fw-semibold">{{ u.nome_completo }}</td>
-          <td class="small font-monospace">{{ u.matricula }}</td>
           <td class="small text-muted">{{ u.username }}</td>
           <td class="small">{{ u.cargo|default:"—" }}</td>
           <td class="text-center">

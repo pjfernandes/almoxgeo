@@ -20,12 +20,12 @@ class Usuario(AbstractUser):
     Estende o AbstractUser do Django adicionando campos institucionais.
     O campo 'username' do AbstractUser será usado como login.
     """
-    matricula = models.CharField(
-        max_length=20,
-        unique=True,
-        verbose_name='Matrícula SIAPE',
-        help_text='Matrícula SIAPE do servidor'
-    )
+    # matricula = models.CharField(
+    #     max_length=20,
+    #     unique=True,
+    #     verbose_name='Matrícula SIAPE',
+    #     help_text='Matrícula SIAPE do servidor'
+    # )
     nome_completo = models.CharField(
         max_length=200,
         verbose_name='Nome completo'
@@ -47,15 +47,18 @@ class Usuario(AbstractUser):
 
     # Campo obrigatório para login
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email', 'matricula', 'nome_completo']
+    #REQUIRED_FIELDS = ['email', 'matricula', 'nome_completo']
+    REQUIRED_FIELDS = ['email', 'nome_completo']
 
     class Meta:
         verbose_name = 'Usuário'
         verbose_name_plural = 'Usuários'
         ordering = ['nome_completo']
 
+    # def __str__(self):
+    #     return f'{self.nome_completo} ({self.matricula})'
     def __str__(self):
-        return f'{self.nome_completo} ({self.matricula})'
+        return f'{self.nome_completo} ({self.username})'
 
     def save(self, *args, **kwargs):
         # Sincronizar is_ativo com is_active do Django
