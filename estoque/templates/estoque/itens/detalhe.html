@@ -272,6 +272,55 @@
       {% endif %}
 
 
+      <!-- ── Anexo do Item ─────────────────────────────────────────── -->
+      {% if item.anexo %}
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">
+            <i class="bi bi-paperclip me-2 text-primary"></i>Anexo
+          </h6>
+          <div class="d-flex gap-2">
+            <a href="{{ item.anexo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-box-arrow-up-right me-1"></i>Abrir
+            </a>
+            <a href="{{ item.anexo.url }}" download class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-download me-1"></i>Baixar
+            </a>
+          </div>
+        </div>
+        <div class="card-body text-center">
+          {% with ext=item.anexo.name|lower %}
+          {% if '.png' in ext or '.jpg' in ext or '.jpeg' in ext or '.gif' in ext or '.webp' in ext %}
+          {# Preview de imagem #}
+          <a href="{{ item.anexo.url }}" target="_blank">
+            <img src="{{ item.anexo.url }}" alt="Anexo do item" class="img-fluid rounded border"
+              style="max-height: 320px; object-fit: contain;">
+          </a>
+          <div class="text-muted small mt-2">
+            <i class="bi bi-image me-1"></i>{{ item.anexo.name|cut:"itens/anexos/" }}
+          </div>
+        {% elif '.pdf' in ext %}
+        {# PDF — card visual com botão (sem embutir, por segurança X-Frame) #}
+        <div class="py-4">
+          <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 4rem;"></i>
+          <div class="mt-2 fw-semibold">{{ item.anexo.name|cut:"itens/anexos/" }}</div>
+          <a href="{{ item.anexo.url }}" target="_blank" class="btn btn-danger btn-sm mt-2">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Abrir PDF em nova aba
+          </a>
+        </div>
+          {% else %}
+          {# Outro tipo de arquivo — sem preview #}
+          <div class="py-4">
+            <i class="bi bi-file-earmark-arrow-down text-secondary" style="font-size: 3rem;"></i>
+            <div class="mt-2">{{ item.anexo.name|cut:"itens/anexos/" }}</div>
+            <small class="text-muted">Pré-visualização não disponível para este tipo de arquivo.</small>
+          </div>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+      {% endif %}
+
       <!-- ── Histórico de Movimentações ────────────────────────────── -->
       <div class="card shadow-sm">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
