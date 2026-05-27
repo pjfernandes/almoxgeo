@@ -24,31 +24,35 @@
     </p>
   </div>
 
-  <div class="d-flex gap-2 flex-wrap">
-    <a href="{% url 'estoque:item_criar' %}" class="btn btn-success btn-sm">
-      <i class="bi bi-plus-circle"></i> Cadastrar Outro Item
-    </a>
-    <a href="{% url 'estoque:item_editar' item.pk %}" class="btn btn-primary btn-sm">
-      <i class="bi bi-pencil"></i> Editar
-    </a>
-    <a href="{% url 'estoque:item_etiqueta' item.pk %}" class="btn btn-outline-secondary btn-sm" target="_blank">
-      <i class="bi bi-printer"></i> Etiqueta
-    </a>
-    <a href="{% url 'estoque:item_qrcode' item.pk %}" class="btn btn-outline-secondary btn-sm" target="_blank">
-      <i class="bi bi-qr-code"></i> QR Code
-    </a>
-    <a href="{% url 'estoque:item_lista' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-list"></i> Voltar à Lista
-    </a>
+  <div class="d-flex flex-column align-items-end gap-2">
+    <!-- Linha 1: ações de baixa (destaque) -->
+    <div class="d-flex gap-2 flex-wrap justify-content-end">
+      <a href="{% url 'estoque:movimentacao_rapida' item.pk %}?tipo=SAIDA" class="btn btn-warning btn-sm">
+        <i class="bi bi-box-arrow-up"></i> Dar Baixa (Saída)
+      </a>
+      <a href="{% url 'estoque:movimentacao_rapida' item.pk %}?tipo=DESCARTE" class="btn btn-danger btn-sm">
+        <i class="bi bi-trash3"></i> Descartar
+      </a>
+    </div>
+    <!-- Linha 2: ações gerais -->
+    <div class="d-flex gap-2 flex-wrap justify-content-end">
+      <a href="{% url 'estoque:item_criar' %}" class="btn btn-success btn-sm">
+        <i class="bi bi-plus-circle"></i> Cadastrar Outro Item
+      </a>
+      <a href="{% url 'estoque:item_editar' item.pk %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-pencil"></i> Editar
+      </a>
+      <a href="{% url 'estoque:item_etiqueta' item.pk %}" class="btn btn-outline-secondary btn-sm" target="_blank">
+        <i class="bi bi-printer"></i> Etiqueta
+      </a>
+      <a href="{% url 'estoque:item_qrcode' item.pk %}" class="btn btn-outline-secondary btn-sm" target="_blank">
+        <i class="bi bi-qr-code"></i> QR Code
+      </a>
+      <a href="{% url 'estoque:item_lista' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-list"></i> Voltar à Lista
+      </a>
+    </div>
   </div>
-  <div class="d-flex gap-2 flex-wrap">
-    <a href="{% url 'estoque:movimentacao_rapida' item.pk %}?tipo=SAIDA" class="btn btn-warning btn-sm">
-      <i class="bi bi-box-arrow-up"></i> Dar Baixa (Saída)
-    </a>
-    <a href="{% url 'estoque:movimentacao_rapida' item.pk %}?tipo=DESCARTE" class="btn btn-danger btn-sm">
-      <i class="bi bi-trash3"></i> Descartar
-    </a>
-    <a href="{% url 'estoque:item_criar' %}" class="btn btn-success btn-sm">
 </div>
 
 
@@ -73,9 +77,6 @@
     </div>
     </div>
     {% else %}
-    {% load tz %}
-    {% now "Y-m-d" as hoje_str %}
-    {% with hoje=hoje_str|date:"Y-m-d" %}
     {% with dias_para_vencer=item.data_validade|timeuntil %}
     {% if "day" in dias_para_vencer and dias_para_vencer|slice:":2"|add:"0" <= 30 %} <div
       class="alert alert-warning d-flex align-items-center mb-3" role="alert">
@@ -86,70 +87,71 @@
       </div>
       {% endif %}
       {% endwith %}
-      {% endwith %}
       {% endif %}
       {% endif %}
 
 
-    <!-- ── Alertas para item recém-criado ──────────────────────── -->
-    {% if request.session.item_recem_criado == item.pk %}
+      <!-- ── Alertas para item recém-criado ──────────────────────── -->
+      {% if request.session.item_recem_criado == item.pk %}
 
-    {% if item.quantidade_atual > 0 %}
-    <!-- Cadastrado COM estoque inicial -->
-    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-      <div class="d-flex align-items-start">
-        <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
-        <div class="flex-grow-1">
-          <h5 class="alert-heading mb-2">
-            <strong>Item cadastrado com sucesso!</strong>
-          </h5>
-          <p class="mb-0">
-            Item criado com <strong>{{ item.quantidade_atual }} {{ item.get_unidade_medida_display }}</strong> no estoque.
-            Uma movimentação de <strong>ENTRADA</strong> foi registrada automaticamente no histórico abaixo.
-          </p>
+      {% if item.quantidade_atual > 0 %}
+      <!-- Cadastrado COM estoque inicial -->
+      <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <div class="d-flex align-items-start">
+          <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
+          <div class="flex-grow-1">
+            <h5 class="alert-heading mb-2">
+              <strong>Item cadastrado com sucesso!</strong>
+            </h5>
+            <p class="mb-0">
+              Item criado com <strong>{{ item.quantidade_atual }} {{ item.get_unidade_medida_display }}</strong> no
+              estoque.
+              Uma movimentação de <strong>ENTRADA</strong> foi registrada automaticamente no histórico abaixo.
+            </p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
       </div>
-    </div>
-    {% else %}
-    <!-- Cadastrado SEM estoque inicial -->
-    <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
-      <div class="d-flex align-items-start">
-        <i class="bi bi-info-circle-fill fs-3 me-3 text-info"></i>
-        <div class="flex-grow-1">
-          <h5 class="alert-heading mb-2">
-            <strong>Item cadastrado sem estoque inicial</strong>
-          </h5>
-          <p class="mb-2">
-            O item foi criado com quantidade 0. Quando o material chegar fisicamente, registre uma entrada para atualizar o
-            estoque.
-          </p>
-          <hr class="my-3">
-          <div class="d-flex gap-2">
-            <a href="{% url 'estoque:movimentacao_criar' %}?item={{ item.pk }}" class="btn btn-primary">
-              <i class="bi bi-arrow-down-circle me-1"></i> Registrar Entrada Agora
-            </a>
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="alert">
-              <i class="bi bi-clock me-1"></i> Mais Tarde
-            </button>
+      {% else %}
+      <!-- Cadastrado SEM estoque inicial -->
+      <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
+        <div class="d-flex align-items-start">
+          <i class="bi bi-info-circle-fill fs-3 me-3 text-info"></i>
+          <div class="flex-grow-1">
+            <h5 class="alert-heading mb-2">
+              <strong>Item cadastrado sem estoque inicial</strong>
+            </h5>
+            <p class="mb-2">
+              O item foi criado com quantidade 0. Quando o material chegar fisicamente, registre uma entrada para
+              atualizar o
+              estoque.
+            </p>
+            <hr class="my-3">
+            <div class="d-flex gap-2">
+              <a href="{% url 'estoque:movimentacao_criar' %}?item={{ item.pk }}" class="btn btn-primary">
+                <i class="bi bi-arrow-down-circle me-1"></i> Registrar Entrada Agora
+              </a>
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="alert">
+                <i class="bi bi-clock me-1"></i> Mais Tarde
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    <script>
-      // Limpar flag após mostrar o alerta
-      document.addEventListener('DOMContentLoaded', function () {
-        fetch('{% url "estoque:limpar_flag_item" %}', {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-          }
+      <script>
+        // Limpar flag após mostrar o alerta
+        document.addEventListener('DOMContentLoaded', function () {
+          fetch('{% url "estoque:limpar_flag_item" %}', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}'
+            }
+          });
         });
-      });
-    </script>
-    {% endif %}
+      </script>
+      {% endif %}
 
 
       <!-- ── Cards de informações ──────────────────────────────────── -->
@@ -184,6 +186,16 @@
                   <tr>
                     <td class="text-muted">Unidade:</td>
                     <td>{{ item.get_unidade_medida_display }}</td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Tipo de Material:</td>
+                    <td>
+                      {% if item.tipo_material == 'PERMANENTE' %}
+                      <span class="badge bg-primary">Bem Permanente</span>
+                      {% else %}
+                      <span class="badge bg-secondary">Material de Consumo</span>
+                      {% endif %}
+                    </td>
                   </tr>
                   <tr>
                     <td class="text-muted">Fornecedor:</td>
@@ -265,6 +277,62 @@
 
       </div>
 
+
+      <!-- ── Dados Administrativos (Empenho, SEI, NF) ──────────────── -->
+      {% if item.numero_empenho or item.processo_sei or item.nf_numero %}
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-2">
+          <h6 class="mb-0">
+            <i class="bi bi-file-earmark-text me-2 text-primary"></i>Dados Administrativos
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% if item.numero_empenho %}
+            <div class="col-md-6 mb-2">
+              <span class="text-muted small">Empenho:</span>
+              <strong>{{ item.numero_empenho }}</strong>
+              {% if item.tipo_empenho %}
+              <span class="badge bg-light text-dark border ms-1">{{ item.get_tipo_empenho_display }}</span>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% if item.processo_sei %}
+            <div class="col-md-6 mb-2">
+              <span class="text-muted small">Processo SEI:</span>
+              <strong>{{ item.processo_sei }}</strong>
+            </div>
+            {% endif %}
+            {% if item.nf_numero %}
+            <div class="col-md-6 mb-2">
+              <span class="text-muted small">Nota Fiscal:</span>
+              <strong>{{ item.nf_numero }}{% if item.nf_serie %} / Série {{ item.nf_serie }}{% endif %}</strong>
+            </div>
+            {% endif %}
+            {% if item.nf_data_emissao %}
+            <div class="col-md-6 mb-2">
+              <span class="text-muted small">Emissão NF:</span>
+              <strong>{{ item.nf_data_emissao|date:"d/m/Y" }}</strong>
+            </div>
+            {% endif %}
+            {% if item.nf_data_entrada %}
+            <div class="col-md-6 mb-2">
+              <span class="text-muted small">Entrada (recebimento):</span>
+              <strong>{{ item.nf_data_entrada|date:"d/m/Y" }}</strong>
+            </div>
+            {% endif %}
+            {% if item.nf_valor %}
+            <div class="col-md-6 mb-2">
+              <span class="text-muted small">Valor da NF:</span>
+              <strong class="text-success">R$ {{ item.nf_valor|floatformat:2 }}</strong>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+
       <!-- Descrição (se houver) -->
       {% if item.descricao %}
       <div class="card shadow-sm mb-4">
@@ -307,15 +375,15 @@
           <div class="text-muted small mt-2">
             <i class="bi bi-image me-1"></i>{{ item.anexo.name|cut:"itens/anexos/" }}
           </div>
-        {% elif '.pdf' in ext %}
-        {# PDF — card visual com botão (sem embutir, por segurança X-Frame) #}
-        <div class="py-4">
-          <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 4rem;"></i>
-          <div class="mt-2 fw-semibold">{{ item.anexo.name|cut:"itens/anexos/" }}</div>
-          <a href="{{ item.anexo.url }}" target="_blank" class="btn btn-danger btn-sm mt-2">
-            <i class="bi bi-box-arrow-up-right me-1"></i>Abrir PDF em nova aba
-          </a>
-        </div>
+          {% elif '.pdf' in ext %}
+          {# PDF — card visual com botão (sem embutir, por segurança X-Frame) #}
+          <div class="py-4">
+            <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 4rem;"></i>
+            <div class="mt-2 fw-semibold">{{ item.anexo.name|cut:"itens/anexos/" }}</div>
+            <a href="{{ item.anexo.url }}" target="_blank" class="btn btn-danger btn-sm mt-2">
+              <i class="bi bi-box-arrow-up-right me-1"></i>Abrir PDF em nova aba
+            </a>
+          </div>
           {% else %}
           {# Outro tipo de arquivo — sem preview #}
           <div class="py-4">
@@ -328,6 +396,7 @@
         </div>
       </div>
       {% endif %}
+
 
       <!-- ── Histórico de Movimentações ────────────────────────────── -->
       <div class="card shadow-sm">
@@ -366,6 +435,8 @@
                     <span class="badge bg-success">Entrada</span>
                     {% elif mov.tipo == 'SAIDA' %}
                     <span class="badge bg-danger">Saída</span>
+                    {% elif mov.tipo == 'DESCARTE' %}
+                    <span class="badge bg-dark">Descarte</span>
                     {% elif mov.tipo == 'AJUSTE' %}
                     <span class="badge bg-warning text-dark">Ajuste</span>
                     {% else %}

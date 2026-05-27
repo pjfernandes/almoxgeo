@@ -869,6 +869,8 @@ def movimentacao_rapida(request, pk):
     if request.method == 'POST':
         tipo = request.POST.get('tipo', 'SAIDA')
         quantidade = request.POST.get('quantidade', '')
+        solicitante_nome = request.POST.get('solicitante_nome', '').strip()
+        solicitante_departamento = request.POST.get('solicitante_departamento', '').strip()
 
         # Validações simples
         erro = None
@@ -883,15 +885,20 @@ def movimentacao_rapida(request, pk):
             erro = (f'Estoque insuficiente. Disponível: '
                     f'{item.quantidade_atual} {item.get_unidade_medida_display()}.')
 
+        if not erro and tipo == 'SAIDA' and not solicitante_nome:
+            erro = 'Informe quem está retirando o material.'
+
         if erro:
             messages.error(request, erro)
         else:
             mov = Movimentacao(
-                item=item,
-                tipo=tipo,
-                quantidade=quantidade,
-                responsavel=request.user,
-            )
+                            item=item,
+                            tipo=tipo,
+                            quantidade=quantidade,
+                            responsavel=request.user,
+                            solicitante_nome=solicitante_nome,
+                            solicitante_departamento=solicitante_departamento,
+                        )
             try:
                 mov.save()
                 rotulo = 'Descarte' if tipo == 'DESCARTE' else 'Saída'

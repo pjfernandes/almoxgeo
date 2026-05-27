@@ -58,22 +58,30 @@
           <input type="hidden" name="tipo" value="{{ tipo }}">
 
           {# Quantidade com botões +/- grandes #}
-          <label class="form-label fw-semibold">Quantidade a {% if tipo == 'DESCARTE' %}descartar{% else %}retirar{% endif
-            %}</label>
+          <label class="form-label fw-semibold">Quantidade a {% if tipo == 'DESCARTE' %}descartar{% else %}retirar{% endif %}</label>
           <div class="input-group input-group-lg mb-3">
             <button type="button" class="btn btn-outline-secondary" onclick="ajustarQtd(-1)">
               <i class="bi bi-dash-lg"></i>
             </button>
-            <input type="number" name="quantidade" id="quantidade" class="form-control text-center fw-bold" value="1" min="1"
-              max="{{ item.quantidade_atual }}" inputmode="numeric">
+            <input type="number" name="quantidade" id="quantidade" class="form-control text-center fw-bold" value="1"
+              min="1" max="{{ item.quantidade_atual }}" inputmode="numeric">
             <button type="button" class="btn btn-outline-secondary" onclick="ajustarQtd(1)">
               <i class="bi bi-plus-lg"></i>
             </button>
           </div>
 
+          {# Destino da saída (só para SAÍDA, não para descarte) #}
+          {% if tipo == 'SAIDA' %}
+          <label class="form-label fw-semibold">Quem está retirando?</label>
+          <input type="text" name="solicitante_nome" class="form-control form-control-lg mb-2" placeholder="Ex: João Silva"
+            required>
+          <input type="text" name="solicitante_departamento" class="form-control mb-3"
+            placeholder="Departamento/Setor (opcional) — ex: Laboratório de Geoquímica">
+          {% endif %}
+
           {# Botões grandes #}
           <button type="submit" class="btn btn-lg w-100 mb-2
-                    {% if tipo == 'DESCARTE' %}btn-danger{% else %}btn-warning{% endif %}">
+            {% if tipo == 'DESCARTE' %}btn-danger{% else %}btn-warning{% endif %}">
             <i class="bi bi-check-lg me-1"></i>
             Confirmar {% if tipo == 'DESCARTE' %}Descarte{% else %}Baixa{% endif %}
           </button>
