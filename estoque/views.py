@@ -854,6 +854,62 @@ def item_etiqueta(request, pk):
 
 
 @login_required
+def movimentacao_rapida(request, pk):
+    """
+    Tela de baixa rápida otimizada para celular (após escanear o QR Code).
+    Permite registrar SAÍDA ou DESCARTE de um item com poucos toques.
+
+    URL: /itens/<pk>/baixa/?tipo=SAIDA  (ou ?tipo=DESCARTE)
+    """
+    item = get_object_or_404(Item.objects.select_related('almoxarifado', 'categoria'), pk=pk)
+    tipo = request.GET.get('tipo', 'SAIDA')
+    if tipo not in ('SAIDA', 'DESCARTE'):
+        tipo = 'SAIDA'
+
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo', 'SAIDA')
+        quantidade = request.POST.get('quantidade', '')
+
+        # Validações simples
+        erro = None
+        try:
+            quantidade = int(quantidade)
+            if quantidade <= 0:
+                erro = 'A quantidade deve ser maior que zero.'
+        except (ValueError, TypeError):
+            erro = 'Informe uma quantidade válida.'
+
+        if not erro and quantidade > item.quantidade_atual:
+            erro = (f'Estoque insuficiente. Disponível: '
+                    f'{item.quantidade_atual} {item.get_unidade_medida_display()}.')
+
+        if erro:
+            messages.error(request, erro)
+        else:
+            mov = Movimentacao(
+                item=item,
+                tipo=tipo,
+                quantidade=quantidade,
+                responsavel=request.user,
+            )
+            try:
+                mov.save()
+                rotulo = 'Descarte' if tipo == 'DESCARTE' else 'Saída'
+                messages.success(
+                    request,
+                    f'{rotulo} de {quantidade} {item.get_unidade_medida_display()} '
+                    f'registrada! Estoque atual: {item.quantidade_atual}.'
+                )
+                return redirect('estoque:item_detalhe', pk=item.pk)
+            except Exception as e:
+                messages.error(request, f'Erro ao registrar: {e}')
+
+    return render(request, 'estoque/movimentacoes/rapida.html', {
+        'item': item,
+        'tipo': tipo,
+    })
+
+@login_required
 @user_passes_test(is_admin)
 def usuario_toggle_ativo(request, pk):
     """Ativa/desativa usuário sem excluí-lo."""

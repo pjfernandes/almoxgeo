@@ -449,6 +449,7 @@ class Movimentacao(models.Model):
     TIPO_CHOICES = [
         ('ENTRADA',      'Entrada'),
         ('SAIDA',        'Saída'),
+        ('DESCARTE',     'Descarte'),
         ('AJUSTE',       'Ajuste'),
         ('TRANSFERENCIA','Transferência'),
     ]
@@ -548,8 +549,8 @@ class Movimentacao(models.Model):
 
     def clean(self):
         """Validações de negócio antes de salvar."""
-        # Saída não pode deixar estoque negativo
-        if self.tipo == 'SAIDA':
+        # Saída e Descarte não podem deixar estoque negativo
+        if self.tipo in ('SAIDA', 'DESCARTE'):
             if self.quantidade > self.item.quantidade_atual:
                 raise ValidationError(
                     f'Quantidade insuficiente em estoque. '
@@ -595,8 +596,8 @@ class Movimentacao(models.Model):
             if self.tipo == 'ENTRADA':
                 nova_qtd = self.item.quantidade_atual + self.quantidade
 
-            elif self.tipo == 'SAIDA':
-                nova_qtd = self.item.quantidade_atual - self.quantidade
+            elif self.tipo in ('SAIDA', 'DESCARTE'):
+                            nova_qtd = self.item.quantidade_atual - self.quantidade
 
             elif self.tipo == 'AJUSTE':
                 # No ajuste, a quantidade informada é o novo valor absoluto

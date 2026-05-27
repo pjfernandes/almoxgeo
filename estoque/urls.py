@@ -37,6 +37,7 @@ urlpatterns = [
     path('itens/<int:pk>/editar/',  views.item_editar,   name='item_editar'),
     path('itens/<int:pk>/qrcode/',  views.item_qrcode,   name='item_qrcode'),
     path('itens/<int:pk>/etiqueta/',views.item_etiqueta, name='item_etiqueta'),
+    path('itens/<int:pk>/baixa/',   views.movimentacao_rapida, name='movimentacao_rapida'),
 
     # ── Movimentações ─────────────────────────────────────────────────────────
     path('movimentacoes/',              views.movimentacao_lista,          name='movimentacao_lista'),

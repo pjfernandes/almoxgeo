@@ -1,0 +1,115 @@
+{% extends 'estoque/base.html' %}
+{% block title %}Baixa Rápida — {{ item.nome }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-5 col-md-7">
+
+    {# Cabeçalho colorido conforme o tipo #}
+    <div class="card shadow-sm mb-3 border-0">
+      <div class="card-body text-center text-white rounded
+        {% if tipo == 'DESCARTE' %}bg-danger{% else %}bg-warning{% endif %}">
+        {% if tipo == 'DESCARTE' %}
+        <i class="bi bi-trash3 d-block mb-2" style="font-size: 2.5rem;"></i>
+        <h4 class="mb-0">Descartar Item</h4>
+        {% else %}
+        <i class="bi bi-box-arrow-up d-block mb-2" style="font-size: 2.5rem;"></i>
+        <h4 class="mb-0 text-dark">Dar Baixa (Saída)</h4>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Dados do item #}
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h5 class="mb-1">
+          <i class="bi bi-box-seam text-primary me-1"></i>{{ item.nome }}
+        </h5>
+        <div class="text-muted small mb-3">
+          <code>{{ item.codigo_interno }}</code>
+          &nbsp;•&nbsp;<i class="bi bi-building me-1"></i>{{ item.almoxarifado.nome }}
+        </div>
+        <div class="d-flex justify-content-between align-items-center p-3 rounded bg-light">
+          <span class="text-muted">Estoque atual:</span>
+          <span
+            class="fs-3 fw-bold {% if item.quantidade_atual <= item.quantidade_minima %}text-danger{% else %}text-success{% endif %}">
+            {{ item.quantidade_atual }}
+            <small class="fs-6 text-muted">{{ item.get_unidade_medida_display }}</small>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {% if item.quantidade_atual == 0 %}
+    <div class="alert alert-secondary text-center">
+      <i class="bi bi-exclamation-circle me-1"></i>
+      Este item está com estoque zerado. Não há o que dar baixa.
+    </div>
+    <a href="{% url 'estoque:item_detalhe' item.pk %}" class="btn btn-outline-secondary w-100">
+      <i class="bi bi-arrow-left me-1"></i>Voltar ao item
+    </a>
+    {% else %}
+
+    {# Formulário de baixa #}
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post" action="{% url 'estoque:movimentacao_rapida' item.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="tipo" value="{{ tipo }}">
+
+          {# Quantidade com botões +/- grandes #}
+          <label class="form-label fw-semibold">Quantidade a {% if tipo == 'DESCARTE' %}descartar{% else %}retirar{% endif
+            %}</label>
+          <div class="input-group input-group-lg mb-3">
+            <button type="button" class="btn btn-outline-secondary" onclick="ajustarQtd(-1)">
+              <i class="bi bi-dash-lg"></i>
+            </button>
+            <input type="number" name="quantidade" id="quantidade" class="form-control text-center fw-bold" value="1" min="1"
+              max="{{ item.quantidade_atual }}" inputmode="numeric">
+            <button type="button" class="btn btn-outline-secondary" onclick="ajustarQtd(1)">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+
+          {# Botões grandes #}
+          <button type="submit" class="btn btn-lg w-100 mb-2
+                    {% if tipo == 'DESCARTE' %}btn-danger{% else %}btn-warning{% endif %}">
+            <i class="bi bi-check-lg me-1"></i>
+            Confirmar {% if tipo == 'DESCARTE' %}Descarte{% else %}Baixa{% endif %}
+          </button>
+          <a href="{% url 'estoque:item_detalhe' item.pk %}" class="btn btn-outline-secondary btn-lg w-100">
+            Cancelar
+          </a>
+        </form>
+      </div>
+    </div>
+
+    {# Alternar entre saída e descarte #}
+    <div class="text-center mt-3">
+      {% if tipo == 'SAIDA' %}
+      <a href="{% url 'estoque:movimentacao_rapida' item.pk %}?tipo=DESCARTE" class="text-danger small">
+        <i class="bi bi-trash3 me-1"></i>Na verdade quero descartar este item
+      </a>
+      {% else %}
+      <a href="{% url 'estoque:movimentacao_rapida' item.pk %}?tipo=SAIDA" class="text-warning small">
+        <i class="bi bi-box-arrow-up me-1"></i>Na verdade é uma saída normal
+      </a>
+      {% endif %}
+    </div>
+
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  function ajustarQtd(delta) {
+    const campo = document.getElementById('quantidade');
+    let valor = parseInt(campo.value) || 1;
+    const max = parseInt(campo.max);
+    valor += delta;
+    if (valor < 1) valor = 1;
+    if (valor > max) valor = max;
+    campo.value = valor;
+  }
+</script>
+{% endblock %}
