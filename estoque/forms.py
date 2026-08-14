@@ -228,6 +228,21 @@ class ItemForm(forms.ModelForm):
             )
         )
 
+class ItemSelectWidget(forms.Select):
+    """
+    Select de itens que expõe, em cada <option>, o almoxarifado e o estoque
+    do item — usados pelo JavaScript para preencher automaticamente o
+    campo "Almoxarifado de origem".
+    """
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        item = getattr(value, 'instance', None)
+        if item is not None:
+            option['attrs']['data-almoxarifado'] = item.almoxarifado_id
+            option['attrs']['data-estoque'] = item.quantidade_atual
+        return option
+
+
 class MovimentacaoForm(forms.ModelForm):
     class Meta:
         model = Movimentacao
@@ -243,6 +258,7 @@ class MovimentacaoForm(forms.ModelForm):
         ]
         widgets = {
             'observacao': forms.Textarea(attrs={'rows': 3}),
+            'item': ItemSelectWidget(),
         }
         help_texts = {
             'quantidade': 'Para AJUSTE, informe a quantidade total desejada (não a diferença)',
@@ -264,6 +280,11 @@ class MovimentacaoForm(forms.ModelForm):
                 self.fields['item'].queryset = Item.objects.filter(pk=item_pk)
             except Item.DoesNotExist:
                 pass
+        else:
+            # Sem item pré-selecionado: carregar todos com o almoxarifado junto
+            self.fields['item'].queryset = Item.objects.select_related(
+                'almoxarifado'
+            ).order_by('nome')
 
         # Pré-selecionar tipo se vier na URL (ex: ?tipo=ENTRADA)
         if tipo_inicial and tipo_inicial in dict(Movimentacao.TIPO_CHOICES):
@@ -403,7 +424,7 @@ class UsuarioForm(forms.ModelForm):
     class Meta:
         model  = Usuario
         #fields = ['username', 'nome_completo', 'matricula', 'email', 'cargo', 'is_ativo', 'is_staff']
-        fields = ['username', 'nome_completo', 'email', 'cargo', 'is_ativo', 'is_staff']
+        fields = ['username', 'nome_completo', 'email', 'cargo', 'nivel_acesso', 'is_ativo']
 
     def __init__(self, *args, **kwargs):
         self.criando = kwargs.pop('criando', False)
@@ -422,12 +443,22 @@ class UsuarioForm(forms.ModelForm):
                 Column('email',    css_class='col-md-6'),
             ),
             Row(
-                Column('cargo',    css_class='col-md-6'),
-                Column(
-                    'is_ativo',
-                    'is_staff',
-                    css_class='col-md-6'
-                ),
+                Column('cargo',        css_class='col-md-6'),
+                Column('nivel_acesso', css_class='col-md-6'),
+            ),
+            HTML('''
+            <div class="alert alert-light border small mb-3">
+              <strong>O que cada nível pode fazer:</strong>
+              <ul class="mb-0 mt-1">
+                <li><strong>Administrador</strong> — tudo, inclusive criar/editar usuários e excluir registros.</li>
+                <li><strong>Gestor</strong> — registra movimentações e cadastra itens, almoxarifados,
+                    categorias e fornecedores. Não edita nem exclui, e não gerencia usuários.</li>
+                <li><strong>Operador</strong> — apenas registra movimentações (entrada, saída, descarte).</li>
+              </ul>
+            </div>
+            '''),
+            Row(
+                Column('is_ativo', css_class='col-md-6'),
             ),
             Row(
                 Column('password1', css_class='col-md-6'),

@@ -30,7 +30,8 @@
             <small class="text-muted">
               <i class="bi bi-building me-1"></i>{{ item_contexto.almoxarifado.nome }}
               &nbsp;•&nbsp;
-              <i class="bi bi-box-seam me-1"></i>Estoque atual: <strong>{{ item_contexto.quantidade_atual }} {{ item_contexto.get_unidade_medida_display }}</strong>
+              <i class="bi bi-box-seam me-1"></i>Estoque atual: <strong>{{ item_contexto.quantidade_atual }} {{
+                item_contexto.get_unidade_medida_display }}</strong>
               {% if item_contexto.categoria %}
               &nbsp;•&nbsp;
               <i class="bi bi-tag me-1"></i>{{ item_contexto.categoria.nome }}
@@ -62,15 +63,212 @@
           </div>
         </div>
 
+
         {% crispy form %}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="modalNovoItem" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Cadastrar novo item</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="erroNovoItem" class="alert alert-danger d-none py-2 small"></div>
+
+        <label class="form-label fw-semibold">Nome do item *</label>
+        <input type="text" id="novoItemNome" class="form-control mb-3" placeholder="Ex: Caneta esferográfica azul">
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Categoria *</label>
+            <select id="novoItemCategoria" class="form-select">
+              <option value="">Selecione...</option>
+              {% for c in categorias %}
+              <option value="{{ c.pk }}">{{ c.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Almoxarifado *</label>
+            <select id="novoItemAlmoxarifado" class="form-select">
+              <option value="">Selecione...</option>
+              {% for a in almoxarifados %}
+              <option value="{{ a.pk }}">{{ a.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Unidade</label>
+            <select id="novoItemUnidade" class="form-select">
+              {% for valor, rotulo in unidades %}
+              <option value="{{ valor }}">{{ rotulo }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Tipo de material</label>
+            <select id="novoItemTipoMaterial" class="form-select">
+              {% for valor, rotulo in tipos_material %}
+              <option value="{{ valor }}">{{ rotulo }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="alert alert-info py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          O item será criado com estoque <strong>zero</strong>. A movimentação que você
+          está registrando fará o estoque entrar. Outros dados (valor, NF, empenho)
+          podem ser preenchidos depois, na tela do item.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btnSalvarNovoItem">
+          <i class="bi bi-check-lg me-1"></i>Criar e selecionar
+        </button>
       </div>
     </div>
   </div>
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+  /* Ajustes do Tom Select para combinar com o Bootstrap 5 */
+  .ts-wrapper.single .ts-control {
+    min-height: calc(1.5em + 0.75rem + 2px);
+  }
+
+  .ts-dropdown .create {
+    color: #198754;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}
+
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
+  // ══════════════════════════════════════════════════════════════════
+  // BUSCA NO CAMPO ITEM + PREENCHIMENTO AUTOMÁTICO DO ALMOXARIFADO
+  // ══════════════════════════════════════════════════════════════════
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectItem = document.querySelector('#id_item');
+    const selectAlmox = document.querySelector('#id_almoxarifado');
+    if (!selectItem) return;
+
+    // ── Preenche o almoxarifado de origem conforme o item escolhido ──
+    function preencherAlmoxarifado(valor) {
+      if (!selectAlmox) return;
+      const v = (valor !== undefined && valor !== null && valor !== '') ? valor : selectItem.value;
+      if (!v) return;
+      const opt = selectItem.querySelector('option[value="' + v + '"]');
+      if (!opt) return;
+      const almoxId = opt.getAttribute('data-almoxarifado');
+      if (almoxId) {
+        selectAlmox.value = almoxId;
+        // Destaque visual rápido para o usuário perceber o preenchimento
+        selectAlmox.classList.add('border-success');
+        setTimeout(() => selectAlmox.classList.remove('border-success'), 1200);
+      }
+    }
+
+    // ── Modal de cadastro rápido (declarado antes do Tom Select) ─────
+    const modalEl = document.querySelector('#modalNovoItem');
+    const modalNovoItem = new bootstrap.Modal(modalEl);
+
+    // ── Tom Select: busca digitando + opção de criar item ────────────
+    const tsItem = new TomSelect('#id_item', {
+      maxOptions: 1000,
+      placeholder: 'Digite para buscar o item...',
+      createFilter: txt => txt.trim().length >= 2,
+      render: {
+        option_create: (data, escape) =>
+          '<div class="create">➕ Cadastrar novo item: <strong>' +
+          escape(data.input) + '</strong></div>',
+        no_results: () =>
+          '<div class="no-results px-3 py-2 text-muted">' +
+          'Nenhum item encontrado. Digite o nome e clique em "Cadastrar novo item".</div>'
+      },
+      // Em vez de criar um valor solto, abre o modal com o nome digitado
+      create: function (input, callback) {
+        document.querySelector('#novoItemNome').value = input;
+        document.querySelector('#erroNovoItem').classList.add('d-none');
+        modalNovoItem.show();
+        callback();          // encerra o fluxo interno do Tom Select
+        return false;        // quem cria de fato é o modal
+      },
+      onChange: preencherAlmoxarifado
+    });
+
+    // Se já veio um item pré-selecionado pela URL, preencher na carga
+    if (selectItem.value) preencherAlmoxarifado();
+
+    // ══════════════════════════════════════════════════════════════
+    // MODAL — criação rápida de item via AJAX
+    // ══════════════════════════════════════════════════════════════
+    function csrfToken() {
+      const el = document.querySelector('[name=csrfmiddlewaretoken]');
+      return el ? el.value : '';
+    }
+
+    document.querySelector('#btnSalvarNovoItem').addEventListener('click', function () {
+      const btn = this;
+      const erro = document.querySelector('#erroNovoItem');
+      erro.classList.add('d-none');
+
+      const dados = new FormData();
+      dados.append('nome', document.querySelector('#novoItemNome').value);
+      dados.append('categoria', document.querySelector('#novoItemCategoria').value);
+      dados.append('almoxarifado', document.querySelector('#novoItemAlmoxarifado').value);
+      dados.append('unidade_medida', document.querySelector('#novoItemUnidade').value);
+      dados.append('tipo_material', document.querySelector('#novoItemTipoMaterial').value);
+      dados.append('csrfmiddlewaretoken', csrfToken());
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Criando...';
+
+      fetch('{% url "estoque:item_criar_ajax" %}', { method: 'POST', body: dados })
+        .then(r => r.json())
+        .then(res => {
+          if (res.ok) {
+            // Adiciona a opção ao select e seleciona
+            const opt = new Option(res.texto, res.id, true, true);
+            opt.setAttribute('data-almoxarifado', res.almoxarifado_id);
+            opt.setAttribute('data-estoque', res.estoque);
+            selectItem.appendChild(opt);
+
+            tsItem.addOption({ value: res.id, text: res.texto });
+            tsItem.refreshOptions(false);
+            tsItem.setValue(res.id);
+
+            preencherAlmoxarifado();
+            modalNovoItem.hide();
+            document.querySelector('#novoItemNome').value = '';
+          } else {
+            erro.textContent = res.erro || 'Não foi possível criar o item.';
+            erro.classList.remove('d-none');
+          }
+        })
+        .catch(() => {
+          erro.textContent = 'Erro de conexão. Tente novamente.';
+          erro.classList.remove('d-none');
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Criar e selecionar';
+        });
+    });
+  });
+
   // ══════════════════════════════════════════════════════════════════
   // CONTROLE DINÂMICO DE CAMPOS BASEADO NO TIPO DE MOVIMENTAÇÃO
   // ══════════════════════════════════════════════════════════════════

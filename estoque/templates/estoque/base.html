@@ -161,7 +161,7 @@
 
     .sidebar-nav .nav-link-destaque i {
       font-size: 1.15rem;
-}
+    }
 
     /* ── Área de conteúdo ──────────────────────────────────── */
     .main-content {
@@ -413,149 +413,151 @@
 
 <body>
 
-<!-- ════════════════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════════════════
      TOPBAR
 ════════════════════════════════════════════════════════ -->
-<header class="topbar">
-  <!-- Botão para abrir sidebar no mobile -->
-  <button class="btn btn-sm text-white me-2 d-lg-none" id="sidebarToggle" type="button">
-    <i class="bi bi-list fs-5"></i>
-  </button>
-
-  <!-- Logo e nome do sistema -->
-  <a href="{% url 'estoque:dashboard' %}" class="brand d-flex align-items-center">
-    <img src="{% static 'img/logo_igeo.jpg' %}" alt="Logo IGeo"
-      style="height: 32px; width: 32px; border-radius: 50%; object-fit: cover;" class="me-2">
-    <span class="d-none d-md-inline">Sistema de Gestão de Estoque</span>
-    <span class="badge bg-light text-secondary fw-normal ms-1 d-none d-lg-inline"
-      style="font-size:0.65rem;">IGeo/UFF</span>
-  </a>
-
-  <!-- Botão de busca com modal (logo após o logo, à esquerda) -->
-  <button type="button" class="btn btn-busca btn-sm d-none d-md-flex align-items-center gap-2 ms-3"
-    data-bs-toggle="modal" data-bs-target="#modalBusca">
-    <i class="bi bi-search"></i>
-    <span class="flex-grow-1">Buscar itens...</span>
-    <kbd>Ctrl K</kbd>
-  </button>
-
-  <!-- Espaçador para empurrar info do usuário para a direita -->
-  <div class="ms-auto"></div>
-
-  <!-- Informações do usuário logado -->
-  <div class="d-flex align-items-center gap-2">
-    <div class="user-info d-none d-lg-block text-end">
-      <div class="fw-semibold" style="font-size:0.85rem;">
-        {{ request.user.nome_completo|truncatechars:30 }}
-      </div>
-      <div style="font-size:0.75rem; opacity:0.75;">
-        {{ request.user.cargo|default:"Servidor" }}
-      </div>
-    </div>
-
-    <!-- Toggle de modo escuro -->
-    <button id="btnModoEscuro" class="btn btn-sm btn-outline-light rounded-circle" style="width:36px;height:36px;"
-      title="Alternar modo escuro">
-      <i class="bi bi-moon-stars"></i>
+  <header class="topbar">
+    <!-- Botão para abrir sidebar no mobile -->
+    <button class="btn btn-sm text-white me-2 d-lg-none" id="sidebarToggle" type="button">
+      <i class="bi bi-list fs-5"></i>
     </button>
 
-    <!-- Dropdown do usuário -->
-    <div class="dropdown">
-      <button class="btn btn-sm btn-outline-light rounded-circle" data-bs-toggle="dropdown" aria-expanded="false"
-        style="width:36px;height:36px;">
-        <i class="bi bi-person-fill"></i>
+    <!-- Logo e nome do sistema -->
+    <a href="{% url 'estoque:dashboard' %}" class="brand d-flex align-items-center">
+      <img src="{% static 'img/logo_igeo.jpg' %}" alt="Logo IGeo"
+        style="height: 32px; width: 32px; border-radius: 50%; object-fit: cover;" class="me-2">
+      <span class="d-none d-md-inline">Sistema de Gestão de Estoque</span>
+      <span class="badge bg-light text-secondary fw-normal ms-1 d-none d-lg-inline"
+        style="font-size:0.65rem;">IGeo/UFF</span>
+    </a>
+
+    <!-- Botão de busca com modal (logo após o logo, à esquerda) -->
+    <button type="button" class="btn btn-busca btn-sm d-none d-md-flex align-items-center gap-2 ms-3"
+      data-bs-toggle="modal" data-bs-target="#modalBusca">
+      <i class="bi bi-search"></i>
+      <span class="flex-grow-1">Buscar itens...</span>
+      <kbd>Ctrl K</kbd>
+    </button>
+
+    <!-- Espaçador para empurrar info do usuário para a direita -->
+    <div class="ms-auto"></div>
+
+    <!-- Informações do usuário logado -->
+    <div class="d-flex align-items-center gap-2">
+      <div class="user-info d-none d-lg-block text-end">
+        <div class="fw-semibold" style="font-size:0.85rem;">
+          {{ request.user.nome_completo|truncatechars:30 }}
+        </div>
+        <div style="font-size:0.75rem; opacity:0.75;">
+          {{ request.user.cargo|default:"Servidor" }}
+        </div>
+      </div>
+
+      <!-- Toggle de modo escuro -->
+      <button id="btnModoEscuro" class="btn btn-sm btn-outline-light rounded-circle" style="width:36px;height:36px;"
+        title="Alternar modo escuro">
+        <i class="bi bi-moon-stars"></i>
       </button>
-      <ul class="dropdown-menu dropdown-menu-end">
-        <li>
-          <span class="dropdown-item-text small text-muted">
-            {{ request.user.username }}
-          </span>
-        </li>
-        <li>
-          <hr class="dropdown-divider">
-        </li>
-        <li>
-          <a class="dropdown-item" href="{% url 'estoque:trocar_senha' %}">
-            <i class="bi bi-key me-2"></i>Trocar senha
-          </a>
-        </li>
-        <li>
-          <!-- Logout via form POST (segurança CSRF) -->
-          <form method="post" action="{% url 'estoque:logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="dropdown-item text-danger">
-              <i class="bi bi-box-arrow-right me-2"></i>Sair
-            </button>
-          </form>
-        </li>
-      </ul>
+
+      <!-- Dropdown do usuário -->
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-light rounded-circle" data-bs-toggle="dropdown" aria-expanded="false"
+          style="width:36px;height:36px;">
+          <i class="bi bi-person-fill"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li>
+            <span class="dropdown-item-text small text-muted">
+              {{ request.user.username }}
+            </span>
+          </li>
+          <li>
+            <hr class="dropdown-divider">
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'estoque:trocar_senha' %}">
+              <i class="bi bi-key me-2"></i>Trocar senha
+            </a>
+          </li>
+          <li>
+            <!-- Logout via form POST (segurança CSRF) -->
+            <form method="post" action="{% url 'estoque:logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger">
+                <i class="bi bi-box-arrow-right me-2"></i>Sair
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
     </div>
-  </div>
-</header>
+  </header>
 
 
-<!-- ════════════════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════════════════
      SIDEBAR
 ════════════════════════════════════════════════════════ -->
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-nav py-2">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-nav py-2">
 
-    <!-- PRINCIPAL -->
-    <div class="nav-section">Principal</div>
-    <a href="{% url 'estoque:dashboard' %}"
-      class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-      <i class="bi bi-speedometer2"></i> Dashboard
-    </a>
+      <!-- PRINCIPAL -->
+      <div class="nav-section">Principal</div>
+      <a href="{% url 'estoque:dashboard' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
 
-    <!-- CADASTROS -->
-    <div class="nav-section mt-3">Cadastros</div>
-    <a href="{% url 'estoque:categoria_lista' %}"
-      class="nav-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-tags"></i> Categorias
-    </a>
-    <a href="{% url 'estoque:fornecedor_lista' %}"
-      class="nav-link {% if 'fornecedor' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-truck"></i> Fornecedores
-    </a>
-    <a href="{% url 'estoque:almoxarifado_lista' %}"
-      class="nav-link {% if 'almoxarifado' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-building"></i> Almoxarifados
-    </a>
+      <!-- CADASTROS -->
+      {% if request.user.pode_cadastrar %}
+      <div class="nav-section mt-3">Cadastros</div>
+      <a href="{% url 'estoque:categoria_lista' %}"
+        class="nav-link {% if 'categoria' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-tags"></i> Categorias
+      </a>
+      <a href="{% url 'estoque:fornecedor_lista' %}"
+        class="nav-link {% if 'fornecedor' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-truck"></i> Fornecedores
+      </a>
+      <a href="{% url 'estoque:almoxarifado_lista' %}"
+        class="nav-link {% if 'almoxarifado' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-building"></i> Almoxarifados
+      </a>
+      {% endif %}
 
-    <!-- OPERAÇÕES -->
-    <div class="nav-section mt-3">Operações</div>
-    <a href="{% url 'estoque:item_lista' %}"
-      class="nav-link {% if 'item' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-box-seam"></i> Itens
-    </a>
-    <a href="{% url 'estoque:movimentacao_lista' %}"
-      class="nav-link {% if 'movimentacao' in request.resolver_match.url_name and 'criar' not in request.path %}active{% endif %}">
-      <i class="bi bi-arrow-left-right"></i> Movimentações
-    </a>
+      <!-- OPERAÇÕES -->
+      <div class="nav-section mt-3">Operações</div>
+      <a href="{% url 'estoque:item_lista' %}"
+        class="nav-link {% if 'item' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-box-seam"></i> Itens
+      </a>
+      <a href="{% url 'estoque:movimentacao_lista' %}"
+        class="nav-link {% if 'movimentacao' in request.resolver_match.url_name and 'criar' not in request.path %}active{% endif %}">
+        <i class="bi bi-arrow-left-right"></i> Movimentações
+      </a>
 
-    <!-- Botão de ação em destaque -->
-    <a href="{% url 'estoque:movimentacao_criar' %}" class="nav-link nav-link-destaque">
-      <i class="bi bi-plus-circle-fill"></i> Nova Movimentação
-    </a>
+      <!-- Botão de ação em destaque -->
+      <a href="{% url 'estoque:movimentacao_criar' %}" class="nav-link nav-link-destaque">
+        <i class="bi bi-plus-circle-fill"></i> Nova Movimentação
+      </a>
 
-    <!-- RELATÓRIOS -->
-    <div class="nav-section mt-3">Relatórios</div>
-    <a href="{% url 'estoque:relatorio_estoque' %}"
-      class="nav-link {% if 'relatorio' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-file-earmark-bar-graph"></i> Estoque Atual
-    </a>
+      <!-- RELATÓRIOS -->
+      <div class="nav-section mt-3">Relatórios</div>
+      <a href="{% url 'estoque:relatorio_estoque' %}"
+        class="nav-link {% if 'relatorio' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-file-earmark-bar-graph"></i> Estoque Atual
+      </a>
 
-    <!-- ADMIN -->
-    {% if request.user.is_staff %}
-    <div class="nav-section mt-3">Administração</div>
-    <a href="{% url 'estoque:usuario_lista' %}"
-      class="nav-link {% if 'usuario' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-people"></i> Usuários
-    </a>
-    {% endif %}
+      <!-- ADMIN -->
+      {% if request.user.pode_gerenciar_usuarios %}
+      <div class="nav-section mt-3">Administração</div>
+      <a href="{% url 'estoque:usuario_lista' %}"
+        class="nav-link {% if 'usuario' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-people"></i> Usuários
+      </a>
+      {% endif %}
 
-  </div>
-</nav>
+    </div>
+  </nav>
 
   <!-- ════════════════════════════════════════════════════════
      ÁREA DE CONTEÚDO PRINCIPAL

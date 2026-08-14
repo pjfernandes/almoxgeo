@@ -38,6 +38,7 @@ urlpatterns = [
     path('itens/<int:pk>/qrcode/',  views.item_qrcode,   name='item_qrcode'),
     path('itens/<int:pk>/etiqueta/',views.item_etiqueta, name='item_etiqueta'),
     path('itens/<int:pk>/baixa/',   views.movimentacao_rapida, name='movimentacao_rapida'),
+    path('itens/criar-ajax/',       views.item_criar_ajax,     name='item_criar_ajax'),
 
     # ── Movimentações ─────────────────────────────────────────────────────────
     path('movimentacoes/',              views.movimentacao_lista,          name='movimentacao_lista'),

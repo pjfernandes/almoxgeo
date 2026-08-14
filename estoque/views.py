@@ -15,8 +15,18 @@ from django.db import models
 # ─── Utilitário: verificar se usuário é admin ─────────────────────────────────
 
 def is_admin(user):
-    """Verifica se o usuário é staff (administrador)."""
-    return user.is_staff
+    """Administrador: gerencia usuários e pode editar/excluir tudo."""
+    return user.is_authenticated and (getattr(user, 'eh_admin', False) or user.is_superuser)
+
+
+def pode_cadastrar(user):
+    """Admin e Gestor podem criar itens, almoxarifados, categorias, fornecedores."""
+    return user.is_authenticated and getattr(user, 'pode_cadastrar', False)
+
+
+def pode_editar(user):
+    """Somente administradores editam ou excluem registros."""
+    return user.is_authenticated and getattr(user, 'pode_editar', False)
 
 
 # ─── Redirecionamento da raiz ─────────────────────────────────────────────────
@@ -251,6 +261,7 @@ def almoxarifado_lista(request):
 
 
 @login_required
+@user_passes_test(pode_cadastrar)
 def almoxarifado_criar(request):
     """Cria um novo almoxarifado."""
     if request.method == 'POST':
@@ -266,6 +277,7 @@ def almoxarifado_criar(request):
 
 
 @login_required
+@user_passes_test(pode_editar)
 def almoxarifado_editar(request, pk):
     """Edita um almoxarifado existente."""
     alm = get_object_or_404(Almoxarifado, pk=pk)
@@ -282,6 +294,7 @@ def almoxarifado_editar(request, pk):
 
 
 @login_required
+@user_passes_test(pode_editar)
 def almoxarifado_toggle_ativo(request, pk):
     """Ativa ou desativa um almoxarifado (nunca exclui)."""
     alm = get_object_or_404(Almoxarifado, pk=pk)
@@ -305,6 +318,7 @@ def categoria_lista(request):
 
 
 @login_required
+@user_passes_test(pode_cadastrar)
 def categoria_criar(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
@@ -319,6 +333,7 @@ def categoria_criar(request):
 
 
 @login_required
+@user_passes_test(pode_editar)
 def categoria_editar(request, pk):
     cat = get_object_or_404(Categoria, pk=pk)
     if request.method == 'POST':
@@ -334,6 +349,7 @@ def categoria_editar(request, pk):
 
 
 @login_required
+@user_passes_test(pode_editar)
 def categoria_excluir(request, pk):
     cat = get_object_or_404(Categoria, pk=pk)
     if request.method == 'POST':
@@ -357,6 +373,7 @@ def fornecedor_lista(request):
 
 
 @login_required
+@user_passes_test(pode_cadastrar)
 def fornecedor_criar(request):
     if request.method == 'POST':
         form = FornecedorForm(request.POST)
@@ -371,6 +388,7 @@ def fornecedor_criar(request):
 
 
 @login_required
+@user_passes_test(pode_editar)
 def fornecedor_editar(request, pk):
     forn = get_object_or_404(Fornecedor, pk=pk)
     if request.method == 'POST':
@@ -386,6 +404,7 @@ def fornecedor_editar(request, pk):
 
 
 @login_required
+@user_passes_test(pode_editar)
 def fornecedor_excluir(request, pk):
     forn = get_object_or_404(Fornecedor, pk=pk)
     if request.method == 'POST':
@@ -445,6 +464,7 @@ def item_detalhe(request, pk):
     })
 
 @login_required
+@user_passes_test(pode_cadastrar)
 def item_criar(request):
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES)
@@ -492,6 +512,7 @@ def item_criar(request):
     })
 
 @login_required
+@user_passes_test(pode_editar)
 def item_editar(request, pk):
     """Edita os dados cadastrais de um item (não altera quantidade via aqui)."""
     item = get_object_or_404(Item, pk=pk)
@@ -588,6 +609,63 @@ def movimentacao_criar(request):
         'form': form,
         'titulo': 'Nova Movimentação',
         'item_contexto': item_contexto,
+        # Dados para o modal de cadastro rápido de item
+        'categorias': Categoria.objects.order_by('nome'),
+        'almoxarifados': Almoxarifado.objects.filter(ativo=True).order_by('nome'),
+        'unidades': Item.UNIDADES,
+        'tipos_material': Item.TIPO_MATERIAL_CHOICES,
+    })
+
+
+@login_required
+def item_criar_ajax(request):
+    """
+    Cria um item rapidamente via AJAX (modal da tela de movimentação).
+    Retorna JSON com os dados do item criado.
+    """
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'erro': 'Método não permitido.'}, status=405)
+
+    if not request.user.pode_cadastrar:
+        return JsonResponse(
+            {'ok': False, 'erro': 'Seu nível de acesso não permite cadastrar itens.'},
+            status=403
+        )
+
+    nome = (request.POST.get('nome') or '').strip()
+    categoria_id = request.POST.get('categoria')
+    almoxarifado_id = request.POST.get('almoxarifado')
+    unidade = request.POST.get('unidade_medida') or 'un'
+    tipo_material = request.POST.get('tipo_material') or 'CONSUMO'
+    quantidade_minima = request.POST.get('quantidade_minima') or 0
+
+    if not nome or not categoria_id or not almoxarifado_id:
+        return JsonResponse(
+            {'ok': False, 'erro': 'Preencha nome, categoria e almoxarifado.'},
+            status=400
+        )
+
+    try:
+        item = Item.objects.create(
+            nome=nome,
+            categoria_id=categoria_id,
+            almoxarifado_id=almoxarifado_id,
+            unidade_medida=unidade,
+            tipo_material=tipo_material,
+            quantidade_minima=int(quantidade_minima or 0),
+            quantidade_atual=0,
+        )
+    except Exception as e:
+        return JsonResponse({'ok': False, 'erro': f'Erro ao criar item: {e}'}, status=400)
+
+    return JsonResponse({
+        'ok': True,
+        'id': item.pk,
+        'texto': f'{item.nome} [{item.codigo_interno}]',
+        'almoxarifado_id': item.almoxarifado_id,
+        'estoque': item.quantidade_atual,
     })
 
 #Views de Exportação
@@ -673,10 +751,10 @@ def movimentacao_exportar_pdf(request):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="movimentacoes.pdf"'
 
-    # Documento em modo paisagem (mais colunas)
+    # Documento em modo retrato
     doc = SimpleDocTemplate(
         response,
-        pagesize=landscape(A4),
+        pagesize=A4,
         leftMargin=1.5*cm, rightMargin=1.5*cm,
         topMargin=2*cm,    bottomMargin=2*cm
     )
@@ -721,27 +799,28 @@ def movimentacao_exportar_pdf(request):
         dados.append([
             mov.data_movimentacao.strftime('%d/%m/%Y\n%H:%M'),
             mov.get_tipo_display(),
-            mov.item.nome[:30],
-            mov.almoxarifado.nome[:20],
+            mov.item.nome[:24],
+            mov.almoxarifado.nome[:16],
             str(mov.quantidade),
             str(mov.quantidade_anterior),
             str(mov.quantidade_posterior),
-            solicitante,
-            mov.responsavel.nome_completo[:25],
+            solicitante[:18],
+            mov.responsavel.nome_completo[:14],
         ])
 
-    tabela = Table(dados, repeatRows=1)
+    larguras = [2.0*cm, 1.7*cm, 3.5*cm, 2.5*cm, 1.0*cm, 1.3*cm, 1.4*cm, 2.6*cm, 2.0*cm]
+    tabela = Table(dados, repeatRows=1, colWidths=larguras)
     tabela.setStyle(TableStyle([
         # Cabeçalho
         ('BACKGROUND',   (0,0), (-1,0), colors.HexColor('#003366')),
         ('TEXTCOLOR',    (0,0), (-1,0), colors.white),
         ('FONTNAME',     (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE',     (0,0), (-1,0), 8),
+        ('FONTSIZE',     (0,0), (-1,0), 7),
         ('ALIGN',        (0,0), (-1,0), 'CENTER'),
         ('BOTTOMPADDING',(0,0), (-1,0), 6),
 
         # Dados
-        ('FONTSIZE',     (0,1), (-1,-1), 7.5),
+        ('FONTSIZE',     (0,1), (-1,-1), 6.5),
         ('ALIGN',        (4,1), (6,-1), 'CENTER'),
         ('ROWBACKGROUNDS',(0,1),(-1,-1),[colors.white, colors.HexColor('#f4f6f9')]),
 
@@ -911,9 +990,18 @@ def movimentacao_rapida(request, pk):
             except Exception as e:
                 messages.error(request, f'Erro ao registrar: {e}')
 
+    # Rótulos e cores prontos — evita {% if %} dentro de atributos no template
+    eh_descarte = (tipo == 'DESCARTE')
     return render(request, 'estoque/movimentacoes/rapida.html', {
         'item': item,
         'tipo': tipo,
+        'eh_descarte': eh_descarte,
+        'cor': 'danger' if eh_descarte else 'warning',
+        'icone': 'trash3' if eh_descarte else 'box-arrow-up',
+        'titulo_acao': 'Descartar Item' if eh_descarte else 'Dar Baixa (Saída)',
+        'verbo': 'descartar' if eh_descarte else 'retirar',
+        'rotulo_acao': 'Descarte' if eh_descarte else 'Baixa',
+        'cor_estoque': 'danger' if item.quantidade_atual <= item.quantidade_minima else 'success',
     })
 
 @login_required
@@ -986,7 +1074,7 @@ def _exportar_estoque_pdf(almoxarifados):
     response['Content-Disposition'] = 'attachment; filename="estoque_atual.pdf"'
 
     doc = SimpleDocTemplate(
-        response, pagesize=landscape(A4),
+        response, pagesize=A4,
         leftMargin=1.5*cm, rightMargin=1.5*cm,
         topMargin=2*cm, bottomMargin=2*cm
     )
@@ -1033,7 +1121,8 @@ def _exportar_estoque_pdf(almoxarifados):
                 'BAIXO' if item.estoque_baixo else 'OK',
             ])
 
-        tabela = Table(dados, repeatRows=1)
+        larguras = [2.2*cm, 5.2*cm, 3.0*cm, 1.6*cm, 2.0*cm, 1.8*cm, 2.2*cm]
+        tabela = Table(dados, repeatRows=1, colWidths=larguras)
         tabela.setStyle(TableStyle([
             ('BACKGROUND',   (0,0), (-1,0), colors.HexColor('#003366')),
             ('TEXTCOLOR',    (0,0), (-1,0), colors.white),

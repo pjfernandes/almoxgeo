@@ -45,6 +45,19 @@ class Usuario(AbstractUser):
         help_text='Desmarque para desativar o acesso do servidor ao sistema'
     )
 
+    # ─── Nível de acesso ──────────────────────────────────────────
+    NIVEL_CHOICES = [
+        ('ADMIN',    'Administrador — acesso total, gerencia usuários'),
+        ('GESTOR',   'Gestor — cadastra e movimenta, não edita/exclui nem gerencia usuários'),
+        ('OPERADOR', 'Operador — apenas registra movimentações (entrada/saída)'),
+    ]
+    nivel_acesso = models.CharField(
+        max_length=10,
+        choices=NIVEL_CHOICES,
+        default='OPERADOR',
+        verbose_name='Nível de acesso'
+    )
+
     # Campo obrigatório para login
     USERNAME_FIELD = 'username'
     #REQUIRED_FIELDS = ['email', 'matricula', 'nome_completo']
@@ -60,9 +73,44 @@ class Usuario(AbstractUser):
     def __str__(self):
         return f'{self.nome_completo} ({self.username})'
 
+    # ─── Propriedades de permissão ────────────────────────────────
+    @property
+    def eh_admin(self):
+        """Administrador: acesso total, incluindo gestão de usuários."""
+        return self.nivel_acesso == 'ADMIN' or self.is_superuser
+
+    @property
+    def pode_gerenciar_usuarios(self):
+        return self.eh_admin
+
+    @property
+    def pode_movimentar(self):
+        """Todos os níveis podem registrar movimentações."""
+        return True
+
+    @property
+    def pode_cadastrar(self):
+        """Criar itens, almoxarifados, categorias, fornecedores."""
+        return self.nivel_acesso in ('ADMIN', 'GESTOR') or self.is_superuser
+
+    @property
+    def pode_editar(self):
+        """Editar registros existentes — apenas administradores."""
+        return self.eh_admin
+
+    @property
+    def pode_excluir(self):
+        """Excluir registros — apenas administradores."""
+        return self.eh_admin
+
     def save(self, *args, **kwargs):
         # Sincronizar is_ativo com is_active do Django
         self.is_active = self.is_ativo
+        # Sincronizar is_staff com o nível de acesso
+        if self.nivel_acesso == 'ADMIN':
+            self.is_staff = True
+        elif not self.is_superuser:
+            self.is_staff = False
         super().save(*args, **kwargs)
 
 
